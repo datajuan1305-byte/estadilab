@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANOVA de un Factor con Tukey, Duncan, Supuestos y Potencia | Estadilab</title>
+<meta name="description" content="Calculadora ANOVA de un factor para diseño de experimentos: pruebas de rangos múltiples (Tukey, Duncan, SNK, DMS, Bonferroni, Scheffé) con letras, supuestos (Shapiro-Wilk, Levene, Durbin-Watson), Kruskal-Wallis, Welch, gráficas y análisis de potencia con costos. Gratis.">
+<link rel="canonical" href="https://estadilab.com/anova/">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
+    --panel: #1a2340; --border: #2a3a5c;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent4: #00ff9d; --accent3: #ff6b6b;
+    --text: #e8edf8; --text2: #8a9bb8; --text3: #4a5a78;
+    --gold: #ffd700;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  header { position: relative; z-index: 10; padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%); display: flex; align-items: center; gap: 1.2rem; }
+  .logo-icon { width: 46px; height: 46px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+  .header-text h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-text p { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+  nav.breadcrumb { position: relative; z-index: 10; padding: 10px 2rem 0; font-size: 0.78rem; color: var(--text3); }
+  nav.breadcrumb a { color: var(--accent); text-decoration: none; }
+  main { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 1.4rem 2rem 3rem; display: flex; flex-direction: column; gap: 1.2rem; }
+  .disclaimer { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); border-left: 3px solid var(--gold); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: #e8d98a; }
+
+  .prueba-header { padding: 1.1rem 1.3rem; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; }
+  .prueba-header h2 { font-size: 1.15rem; margin-bottom: 4px; }
+  .prueba-header .formula { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--accent); background: rgba(0,212,255,0.08); padding: 3px 10px; border-radius: 4px; display: inline-block; }
+  .prueba-header p { font-size: 0.8rem; color: var(--text2); margin-top: 0.5rem; }
+
+  .layout { display: grid; grid-template-columns: 380px 1fr; gap: 1.2rem; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.2rem; }
+  .panel h3 { font-size: 0.72rem; font-family: 'Space Mono', monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); margin-bottom: 1rem; }
+
+  .grupo-box { border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem; margin-bottom: 0.6rem; background: var(--bg3); }
+  .grupo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+  .grupo-header input.nombre-grupo { background: transparent; border: none; color: var(--text); font-weight: 600; font-size: 0.82rem; font-family: 'Sora', sans-serif; padding: 0; width: 60%; }
+  .grupo-header input.nombre-grupo:focus { outline: none; border-bottom: 1px solid var(--accent); }
+  .btn-quitar-g { background: rgba(255,107,107,0.15); border: 1px solid rgba(255,107,107,0.3); color: var(--accent3); border-radius: 6px; padding: 3px 8px; cursor: pointer; font-size: 0.7rem; }
+  .grupo-box textarea { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.7rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.8rem; min-height: 60px; resize: vertical; outline: none; }
+  .btn-agregar { background: var(--bg3); border: 1px dashed var(--border); color: var(--text2); border-radius: 8px; padding: 0.5rem; width: 100%; cursor: pointer; font-size: 0.78rem; margin-bottom: 0.8rem; }
+  .btn-agregar:hover { border-color: var(--accent); color: var(--accent); }
+
+  .calc-btn { width: 100%; padding: 0.75rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: 0.4rem; }
+  .error-box { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.78rem; color: #ff4d6d; margin-top: 0.6rem; display: none; }
+
+  .resultado-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-bottom: 1rem; }
+  .resultado-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem; text-align: center; }
+  .resultado-card .lbl { font-size: 0.6rem; font-family: 'Space Mono', monospace; color: var(--text3); text-transform: uppercase; margin-bottom: 0.35rem; }
+  .resultado-card .val { font-family: 'Space Mono', monospace; font-size: 1.05rem; font-weight: 700; color: var(--accent); }
+
+  .decision-box { border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 1rem; }
+  .decision-box.rechaza { background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); }
+  .decision-box.no-rechaza { background: rgba(0,255,157,0.1); border: 1px solid rgba(0,255,157,0.3); }
+  .decision-box .titulo { font-weight: 700; font-size: 0.9rem; }
+  .decision-box.rechaza .titulo { color: var(--accent3); }
+  .decision-box.no-rechaza .titulo { color: var(--accent4); }
+
+  table.tabla-an { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-bottom: 1rem; }
+  table.tabla-an th { font-size: 0.62rem; text-transform: uppercase; color: var(--text3); padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+  table.tabla-an td { padding: 6px 8px; border-bottom: 1px solid rgba(42,58,92,0.5); font-family: 'Space Mono', monospace; }
+  table.tabla-an tr.sig td:last-child { color: var(--accent4); font-weight: 600; }
+  table.tabla-an tr.no-sig td:last-child { color: var(--text3); }
+
+  .chart-container { position: relative; height: 260px; margin-bottom: 1rem; }
+  .conclusion-text { font-size: 0.85rem; color: var(--text2); line-height: 1.6; }
+  .sin-resultado { text-align: center; color: var(--text3); font-size: 0.85rem; padding: 2rem; }
+
+  .context-panel { grid-column: 1 / -1; }
+  .context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 900px) { .context-grid { grid-template-columns: 1fr; } }
+  .param-group textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.82rem; outline: none; }
+  .param-group { margin-bottom: 0.85rem; }
+  .param-group label { display: block; font-size: 0.78rem; color: var(--text2); margin-bottom: 0.35rem; }
+  .pregunta-row { display: flex; gap: 0.6rem; margin-top: 0.6rem; }
+  .pregunta-row input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.82rem; }
+  .pregunta-row button { width: auto; padding: 0.55rem 1.1rem; white-space: nowrap; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; }
+  .sugerencias { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .sugerencia-chip { font-size: 0.7rem; padding: 0.3rem 0.65rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; color: var(--text2); cursor: pointer; }
+  .sugerencia-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .respuesta-box { margin-top: 0.9rem; background: var(--bg3); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 8px; padding: 0.9rem 1rem; font-size: 0.85rem; color: var(--text); line-height: 1.6; display: none; }
+  .respuesta-box.visible { display: block; }
+  .ia-note { font-size: 0.68rem; color: var(--text3); margin-top: 0.5rem; font-style: italic; }
+  .tabs { display:flex; gap:.35rem; overflow-x:auto; margin-bottom:1rem; padding-bottom:4px; border-bottom:1px solid var(--border); }
+  .tab { background:transparent; border:1px solid transparent; color:var(--text2); padding:.45rem .8rem; border-radius:8px 8px 0 0; cursor:pointer; font-family:'Sora',sans-serif; font-size:.78rem; white-space:nowrap; }
+  .tab:hover { color:var(--accent); }
+  .tab.on { background:var(--bg3); border-color:var(--border); border-bottom-color:var(--bg3); color:var(--accent); font-weight:600; }
+  .tp { display:none; } .tp.on { display:block; }
+  .tw { overflow-x:auto; margin-bottom:1rem; }
+  .ruta { border-radius:10px; padding:1rem 1.2rem; margin-bottom:1rem; border:1px solid; }
+  .ruta.verde { background:rgba(0,255,157,.08); border-color:rgba(0,255,157,.35); } .ruta.ambar { background:rgba(255,215,0,.08); border-color:rgba(255,215,0,.35); } .ruta.rojo { background:rgba(255,107,107,.1); border-color:rgba(255,107,107,.35); }
+  .ruta .titulo { font-weight:700; font-size:.92rem; margin-bottom:.4rem; } .ruta p { font-size:.82rem; color:var(--text2); line-height:1.6; } .ruta ol { margin:.5rem 0 0 1.2rem; font-size:.8rem; color:var(--text2); line-height:1.6; }
+  .semaforos { display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem; margin-bottom:1rem; } @media (max-width:700px){ .semaforos,.resultado-grid { grid-template-columns:1fr 1fr; } }
+  .sem { background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:.7rem; font-size:.74rem; color:var(--text2); } .sem b { display:block; color:var(--text); font-size:.8rem; margin-bottom:.2rem; }
+  .sem.ok { border-color:rgba(0,255,157,.4); } .sem.no { border-color:rgba(255,107,107,.45); } .sem.na { border-style:dashed; }
+  .resultado-grid.c4 { grid-template-columns:repeat(4,1fr); }
+  table.tabla-an td.l, table.tabla-an th.l { text-align:left; font-family:'Sora',sans-serif; }
+  .letra { display:inline-block; min-width:1.4rem; text-align:center; background:rgba(0,212,255,.15); color:var(--accent); border-radius:5px; padding:1px 6px; font-weight:700; }
+  .nota { font-size:.74rem; color:var(--text3); line-height:1.55; margin:.2rem 0 1rem; }
+  .nota.aviso { color:#e8d98a; background:rgba(255,215,0,.07); border-left:3px solid var(--gold); padding:.5rem .8rem; border-radius:0 8px 8px 0; }
+  .ctl { display:flex; flex-wrap:wrap; gap:.7rem; align-items:end; margin-bottom:1rem; } .ctl label { display:block; font-size:.68rem; color:var(--text3); font-family:'Space Mono',monospace; text-transform:uppercase; margin-bottom:3px; }
+  .ctl input, .ctl select, .opt select, .opt input { background:var(--bg3); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:.4rem .6rem; font-family:'Space Mono',monospace; font-size:.8rem; width:120px; } .ctl select, .opt select { width:auto; max-width:100%; }
+  .opt { margin:.2rem 0 .8rem; } .opt label { display:block; font-size:.7rem; color:var(--text3); margin-bottom:3px; font-family:'Space Mono',monospace; text-transform:uppercase; }
+  details.orden { margin-top:.4rem; } details.orden summary { cursor:pointer; font-size:.7rem; color:var(--text3); } details.orden textarea { margin-top:.3rem; min-height:36px !important; }
+  .chart-container.alto { height:320px; } .chart-container.med { height:280px; }
+  .chart-titulo { font-size:.74rem; color:var(--text2); margin:.2rem 0 .4rem; font-weight:600; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; } @media (max-width:900px){ .grid2 { grid-template-columns:1fr; } }
+  .btn-sec { background:var(--bg3); border:1px solid var(--border); color:var(--text2); border-radius:8px; padding:.4rem .8rem; cursor:pointer; font-size:.74rem; margin-right:.4rem; } .btn-sec:hover { border-color:var(--accent); color:var(--accent); }
+  .pmat td, .pmat th { text-align:center; } .pmat td.s { background:rgba(255,107,107,.18); color:var(--accent3); } .pmat td.n { color:var(--text3); }
+  .layout > *, .context-grid > * { min-width:0; } main { min-width:0; }
+  @media (max-width:700px){ header{padding:1rem} main{padding:1rem} nav.breadcrumb{padding:10px 1rem 0} .resultado-grid.c4{grid-template-columns:1fr 1fr} }
+  .paso { background:var(--bg3); border:1px solid var(--border); border-left:3px solid var(--accent2); border-radius:8px; padding:.8rem 1rem; margin-bottom:.7rem; font-size:.82rem; color:var(--text2); line-height:1.75; } .paso b { color:var(--text); } .paso .tabla-an { margin-bottom:.4rem; }
+
+  .code-box { background:#070b16; border:1px solid var(--border); border-radius:8px; padding:.8rem 1rem; max-height:420px; overflow:auto; font-family:'Space Mono',monospace; font-size:.72rem; line-height:1.55; color:#cfe3ff; white-space:pre; margin:.4rem 0 .8rem; }
+  .opt-grupo { display:flex; flex-wrap:wrap; gap:.4rem 1rem; align-items:center; } .opt-chk { display:flex !important; align-items:center; gap:.35rem; font-size:.74rem !important; color:var(--text2) !important; cursor:pointer; text-transform:none !important; letter-spacing:0 !important; }
+  .ctl button:disabled { opacity:.5; cursor:wait; }
+
+  .tabs { flex-wrap:wrap !important; row-gap:.2rem; }
+  .nota a, .ctl a { color:var(--accent); }
+  .opt-chk input { width:auto !important; padding:0 !important; margin:0; }
+  .opt-grupo { gap:.4rem 1.2rem; }
+</style>
+<style id="edu-pro-css">
+.edu-pro{position:relative;z-index:5;max-width:960px;margin:2.5rem auto 0;padding:1.8rem 2rem 3rem;color:var(--text2,#8a9bb8);line-height:1.75;font-size:.95rem;border-top:1px solid var(--border,#2a3a5c)}
+.edu-pro h2{color:var(--text,#e8edf8);font-size:1.35rem;margin:0 0 .8rem}
+.edu-pro h3{color:var(--accent,#00d4ff);font-size:1.02rem;margin:1.4rem 0 .4rem}
+.edu-pro p,.edu-pro ul{margin:0 0 .8rem}.edu-pro ul{padding-left:1.3rem}.edu-pro li{margin-bottom:.35rem}
+.edu-pro strong{color:var(--text,#e8edf8)}.edu-pro code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.85em}
+.edu-pro details{background:var(--panel,#1a2340);border:1px solid var(--border,#2a3a5c);border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem}
+.edu-pro summary{cursor:pointer;color:var(--text,#e8edf8);font-weight:600}.edu-pro details p{margin:.5rem 0 0}
+.edu-pro .ejemplo{background:rgba(0,212,255,.06);border-left:3px solid var(--accent,#00d4ff);padding:.2rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+@media(max-width:700px){.edu-pro{padding:1.4rem 1rem 2.5rem}}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Por qué no usar varias pruebas t?", "acceptedAnswer": {"@type": "Answer", "text": "Porque cada prueba adicional aumenta la probabilidad total de cometer error tipo I."}}, {"@type": "Question", "name": "¿Qué significa un F grande?", "acceptedAnswer": {"@type": "Answer", "text": "Que la variación entre grupos es grande comparada con la variación dentro de ellos."}}, {"@type": "Question", "name": "¿Qué hago si no se cumple la homogeneidad de varianzas?", "acceptedAnswer": {"@type": "Answer", "text": "Considera una transformación de los datos, la prueba de Welch o alternativas no paramétricas como Kruskal-Wallis."}}, {"@type": "Question", "name": "¿Un ANOVA significativo prueba causalidad?", "acceptedAnswer": {"@type": "Answer", "text": "Solo si el diseño fue experimental con asignación aleatoria; en datos observacionales indica asociación."}}, {"@type": "Question", "name": "¿Cómo sé cuáles tratamientos son diferentes después del ANOVA?", "acceptedAnswer": {"@type": "Answer", "text": "Con una prueba de comparaciones múltiples como Tukey HSD, Duncan, SNK o Bonferroni. La calculadora muestra letras compactas: los tratamientos que comparten letra no difieren significativamente."}}, {"@type": "Question", "name": "¿Cuántas repeticiones necesito en mi experimento?", "acceptedAnswer": {"@type": "Answer", "text": "Depende de la diferencia mínima que quieres detectar, la variabilidad esperada, el nivel de significancia y la potencia deseada (típicamente 0,80). La pestaña Potencia calcula las repeticiones por tratamiento y el costo total."}}, {"@type": "Question", "name": "¿Cómo verifico los supuestos del ANOVA?", "acceptedAnswer": {"@type": "Answer", "text": "Normalidad de los residuos con Shapiro-Wilk y el gráfico Q-Q, homogeneidad de varianzas con Levene o Bartlett e independencia con Durbin-Watson si se conoce el orden de ejecución."}}, {"@type": "Question", "name": "¿Cuándo usar Kruskal-Wallis en lugar de ANOVA?", "acceptedAnswer": {"@type": "Answer", "text": "Cuando los residuos no son normales y las muestras son pequeñas, o hay valores atípicos que no puedes justificar eliminar. Si solo fallan las varianzas, usa Welch con Games-Howell."}}]}</script>
+<style id="hp-footer-css">
+.hp-footer{margin:2.5rem 0 0;padding:1.5rem 1rem 2rem;border-top:1px solid rgba(128,128,128,.35);text-align:center;font:13px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:inherit;opacity:.9}
+.hp-footer a{color:inherit;text-decoration:underline;margin:0 .35rem}
+.hp-footer small{display:block;margin-top:.4rem;opacity:.8;font-size:11.5px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">F</div>
+  <div class="header-text">
+    <h1>ANOVA de un Factor</h1>
+    <p>Estadilab · Diseño de experimentos</p>
+  </div>
+</header>
+
+<nav class="breadcrumb"><a href="/">Estadilab</a> › ANOVA de un Factor</nav>
+
+<main>
+  <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+
+  <div class="prueba-header">
+    <h2>ANOVA de un factor con rangos múltiples, supuestos y potencia</h2>
+    <span class="formula">H₀: μ₁ = μ₂ = ... = μₖ</span>
+    <p>Compara 2 o más tratamientos y te dice <strong>cuáles difieren</strong> (Tukey, Duncan, SNK, DMS, Bonferroni, Scheffé con letras compactas), verifica los <strong>supuestos</strong> (normalidad, homogeneidad, independencia) y te orienta entre ANOVA, Welch o Kruskal-Wallis. Incluye <strong>análisis de potencia</strong> para decidir cuántas repeticiones necesitas y cuánto cuestan.</p>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <h3>Tratamientos</h3>
+      <div id="grupos-cont"></div>
+      <button class="btn-agregar" onclick="agregarGrupo()">+ Agregar otro tratamiento</button>
+      <div class="opt">
+        <label for="alpha">Nivel de significancia α</label>
+        <select id="alpha"><option value="0.10">0,10</option><option value="0.05" selected>0,05</option><option value="0.01">0,01</option></select>
+      </div>
+      <button class="calc-btn" onclick="calcularAnova()">Calcular análisis completo</button>
+      <button class="btn-agregar" style="margin-top:.6rem" onclick="cargarEjemplo()">Cargar ejemplo de diseño experimental</button>
+      <div class="error-box" id="error-box"></div>
+      <p class="nota" style="margin-top:.8rem">Pega los datos desde Excel (separados por espacios, saltos de línea, punto y coma o coma). Se acepta coma decimal (3,5). Opcional: el <em>orden de ejecución</em> de cada corrida permite evaluar independencia.</p>
+    </div>
+
+    <div class="panel" id="resultados-panel">
+      <div class="sin-resultado">Completa al menos 2 tratamientos y presiona <strong style="color:var(--text)">Calcular análisis completo</strong></div>
+    </div>
+  </div>
+
+  <div class="context-panel panel">
+    <h3>💬 Contexto de tu análisis y preguntas</h3>
+    <div class="context-grid">
+      <div class="param-group">
+        <label>Describe qué comparan tus tratamientos (opcional)</label>
+        <textarea id="contexto" rows="3" placeholder="Ej: Resistencia a la tensión de una pieza con 4 temperaturas de curado."></textarea>
+      </div>
+      <div class="param-group">
+        <label>Pregunta sobre el resultado</label>
+        <div class="pregunta-row">
+          <input type="text" id="pregunta" placeholder="Ej: ¿cuáles tratamientos son diferentes?">
+          <button onclick="preguntarAnova()">Preguntar</button>
+        </div>
+        <div class="sugerencias">
+          <span class="sugerencia-chip" onclick="usarSugerenciaAnova('¿cuáles tratamientos son diferentes?')">¿Cuáles difieren?</span>
+          <span class="sugerencia-chip" onclick="usarSugerenciaAnova('¿qué prueba de rangos múltiples debo usar?')">Tukey, Duncan, DMS</span>
+          <span class="sugerencia-chip" onclick="usarSugerenciaAnova('¿debo continuar con ANOVA o usar Kruskal-Wallis?')">¿ANOVA o Kruskal-Wallis?</span>
+          <span class="sugerencia-chip" onclick="usarSugerenciaAnova('¿cuántas repeticiones necesito?')">Repeticiones</span>
+          <span class="sugerencia-chip" onclick="usarSugerenciaAnova('¿se cumple la normalidad?')">Normalidad</span>
+          <span class="sugerencia-chip" onclick="usarSugerenciaAnova('¿qué tan importante es el efecto?')">Tamaño del efecto</span>
+        </div>
+      </div>
+    </div>
+    <div class="respuesta-box" id="respuesta-box"></div>
+    <div class="ia-note">Hoy esta respuesta se genera con reglas locales, sin costo. En una fase futura se podrá conectar a IA para preguntas más abiertas.</div>
+  </div>
+</main>
+
+<script src="js/motor-anova-avanzado.js"></script>
+<script src="js/interpretacion-anova.js"></script>
+<script src="js/codigo-anova.js"></script>
+<script src="js/reporte-anova.js"></script>
+<script>
+const COLORES = ['#00d4ff', '#7b61ff', '#00ff9d', '#ff6b6b', '#ffd700', '#ff8c42', '#4dd0e1', '#c792ea', '#9be564', '#f78fb3'];
+const EJEMPLO = [
+  ['Temp. 150 °C', '23.1, 25.4, 21.8, 27.0, 24.2, 26.1'],
+  ['Temp. 170 °C', '30.2, 32.5, 29.1, 35.0, 31.4, 28.8'],
+  ['Temp. 190 °C', '22.4, 20.3, 25.1, 21.2, 23.0, 24.3'],
+  ['Temp. 210 °C', '28.0, 26.3, 31.2, 27.5, 29.1, 33.0']
+];
+let datosForm = EJEMPLO.map(e => ({ nombre: e[0], valores: e[1], orden: '' }));
+let currentResultadoAnova = null, R = null, charts = {}, tabActual = 'resumen', cfgPot = null;
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const tn = (v, d = 3) => (v === null || v === undefined || isNaN(v) || !isFinite(v)) ? '—' : v.toFixed(d).replace('.', ',');
+const tp = p => (p === null || p === undefined || isNaN(p)) ? '—' : (p < 0.0001 ? '< 0,0001' : p.toFixed(4).replace('.', ','));
+
+// ── Entrada de datos ──
+function parsearNumeros(texto) {
+  let t = texto.trim(); if (!t) return [];
+  const comaSep = /,\s/.test(t) || /,$/.test(t) || /,\s*$/.test(t);
+  if (comaSep) t = t.replace(/,/g, ' ');
+  else if (!/[\s;]/.test(t) && (t.match(/,/g) || []).length > 1) t = t.replace(/,/g, ' '); // 1,2,3
+  const partes = t.split(/[;\s]+/).filter(Boolean).map(s => s.replace(',', '.'));
+  const nums = partes.map(Number); return nums.some(isNaN) ? null : nums;
+}
+function leerFormulario() { datosForm.forEach((d, i) => { const a = document.getElementById('nombre-grupo-' + i), b = document.getElementById('datos-grupo-' + i), c = document.getElementById('orden-grupo-' + i); if (a) d.nombre = a.value; if (b) d.valores = b.value; if (c) d.orden = c.value; }); }
+function renderGrupos() {
+  let html = '';
+  datosForm.forEach((d, i) => {
+    html += `<div class="grupo-box"><div class="grupo-header"><input type="text" class="nombre-grupo" id="nombre-grupo-${i}" value="${esc(d.nombre)}">${datosForm.length > 2 ? `<button class="btn-quitar-g" onclick="quitarGrupo(${i})">✕ Quitar</button>` : ''}</div>
+      <textarea id="datos-grupo-${i}" placeholder="Datos separados por coma, espacio o salto de línea">${esc(d.valores)}</textarea>
+      <details class="orden"${d.orden ? ' open' : ''}><summary>Orden de ejecución (opcional)</summary><textarea id="orden-grupo-${i}" placeholder="Ej: 3, 8, 12, 15, 19, 22 (misma cantidad que los datos)">${esc(d.orden)}</textarea></details></div>`;
+  });
+  document.getElementById('grupos-cont').innerHTML = html;
+}
+function agregarGrupo() { leerFormulario(); datosForm.push({ nombre: 'Tratamiento ' + (datosForm.length + 1), valores: '', orden: '' }); renderGrupos(); }
+function quitarGrupo(i) { leerFormulario(); datosForm.splice(i, 1); renderGrupos(); }
+function cargarEjemplo() { datosForm = EJEMPLO.map(e => ({ nombre: e[0], valores: e[1], orden: '' })); renderGrupos(); calcularAnova(); }
+renderGrupos();
+
+function mostrarError(msg) { const b = document.getElementById('error-box'); b.textContent = '⚠ ' + msg; b.style.display = 'block'; }
+
+// ── Cálculo ──
+function calcularAnova() {
+  leerFormulario(); document.getElementById('error-box').style.display = 'none';
+  const grupos = [], nombres = [], ordenes = []; let hayOrden = true;
+  for (let i = 0; i < datosForm.length; i++) {
+    const nombre = datosForm[i].nombre || ('Tratamiento ' + (i + 1)), datos = parsearNumeros(datosForm[i].valores);
+    if (!datos || datos.length < 2) return mostrarError(`El tratamiento "${nombre}" necesita al menos 2 datos numéricos válidos.`);
+    grupos.push(datos); nombres.push(nombre);
+    const o = datosForm[i].orden.trim() ? parsearNumeros(datosForm[i].orden) : null;
+    if (!o || o.length !== datos.length) hayOrden = false; else ordenes.push(o);
+  }
+  if (new Set(nombres).size !== nombres.length) return mostrarError('Los nombres de los tratamientos deben ser distintos.');
+  const alpha = parseFloat(document.getElementById('alpha').value), A = MV.anova(grupos);
+  if (!(A.msw > 0)) return mostrarError('No hay variabilidad dentro de los tratamientos (todos los datos de cada grupo son iguales); el ANOVA no es calculable.');
+
+  const res = MV.residuos(grupos), N = A.N;
+  const sup = { alpha };
+  sup.sw = N >= 3 && N <= 5000 ? MV.shapiroWilk(res.r) : null;
+  sup.swGrupos = grupos.map(g => g.length >= 3 ? MV.shapiroWilk(g) : null);
+  sup.lev = MV.levene(grupos, 'mediana'); sup.levMedia = MV.levene(grupos, 'media');
+  sup.bart = grupos.every(g => MV.varm(g) > 0) ? MV.bartlett(grupos) : { chi2: NaN, df: A.k - 1, p: NaN };
+  sup.razonVar = Math.max(...A.sd) / Math.min(...A.sd.map(s => s || 1e-12));
+  if (hayOrden) {
+    const par = []; let idx = 0; grupos.forEach((g, i) => g.forEach((x, j) => { par.push([ordenes[i][j], res.r[idx++]]); }));
+    par.sort((a, b) => a[0] - b[0]); const rr = par.map(p => p[1]);
+    sup.dw = MV.durbinWatson(rr); sup.rachas = MV.rachas(rr); sup.ordenes = par.map(p => p[0]); sup.resOrden = rr;
+  } else { sup.dw = null; sup.rachas = null; }
+  const metodo = (R && R.comp) ? R.comp.metodo : 'tukey';
+  const comp = MV.comparar(grupos, metodo, alpha);
+  const okVar = grupos.every(g => MV.varm(g) > 0);
+  const welch = okVar ? MV.welchAnova(grupos) : null, gh = okVar ? MV.gamesHowell(grupos, alpha) : null;
+  const kw = MV.kruskalWallis(grupos), dunn = MV.dunn(grupos, 'holm');
+  const ruta = decidirRuta(sup, A, alpha);
+  const obs = MV.potenciaLam(A.k, N, A.ssb / A.msw, alpha);
+  R = { A, grupos, nombres, alpha, comp, sup, res, welch, gh, kw, dunn, ruta, pot: { obs }, hayOrden };
+  currentResultadoAnova = R;
+  const dMax = Math.max(...A.medias) - Math.min(...A.medias);
+  cfgPot = { k: A.k, sigma: A.sp, delta: dMax > 0 ? dMax : A.sp, pot: 0.8, costo: '', presupuesto: '' };
+  renderResultado();
+  const rb = document.getElementById('respuesta-box'); if (rb) rb.classList.remove('visible');
+  if (window.gtag) gtag('event', 'calcular_anova_avanzado', { herramienta: 'anova', k: A.k });
+}
+
+// ── Renderizado ──
+const TABS = [['resumen', '📋 Resumen'], ['comp', '🔍 Comparaciones'], ['graf', '📊 Gráficas'], ['sup', '🧪 Supuestos'], ['pot', '⚡ Potencia'], ['np', '🔀 No paramétrico'], ['cod', '💻 Código y reporte']];
+function renderResultado() {
+  const panel = document.getElementById('resultados-panel');
+  panel.innerHTML = `<h3>Resultado</h3><div class="tabs" role="tablist">${TABS.map(t => `<button class="tab${t[0] === tabActual ? ' on' : ''}" data-t="${t[0]}" role="tab" onclick="irTab('${t[0]}')">${t[1]}</button>`).join('')}</div>` +
+    TABS.map(t => `<div class="tp${t[0] === tabActual ? ' on' : ''}" id="tp-${t[0]}"></div>`).join('');
+  renderTab(tabActual);
+}
+function irTab(t) {
+  tabActual = t; document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.t === t)); document.querySelectorAll('.tp').forEach(p => p.classList.toggle('on', p.id === 'tp-' + t)); renderTab(t);
+}
+function destruirCharts() { Object.values(charts).forEach(c => { try { c.destroy(); } catch (e) { } }); charts = {}; }
+function renderTab(t) {
+  destruirCharts(); if (!R) return;
+  const f = { resumen: tabResumen, comp: tabComp, graf: tabGraf, sup: tabSup, pot: tabPot, np: tabNP, cod: tabCod }[t]; const el = document.getElementById('tp-' + t); el.innerHTML = f(); const post = { comp: postComp, graf: postGraf, sup: postSup, pot: postPot, cod: postCod }[t]; if (post) post();
+}
+function sigTxt(s) { return s ? '✓ Diferentes' : '— Iguales'; }
+function rutaBox() { const ru = R.ruta; return `<div class="ruta ${ru.color}"><div class="titulo">🧭 ${esc(ru.titulo)}</div><p>${esc(ru.texto)}</p><ol>${ru.pasos.map(p => `<li>${esc(p)}</li>`).join('')}</ol></div>`; }
+
+function tabResumen() {
+  const A = R.A, sig = A.p < R.alpha;
+  const tM = R.nombres.map((n, i) => `<tr><td class="l">${esc(n)}</td><td>${A.n[i]}</td><td>${tn(A.medias[i])}</td><td>${tn(A.sd[i])}</td><td><span class="letra">${R.comp.letras[i]}</span></td></tr>`).join('');
+  return `${rutaBox()}
+    <div class="resultado-grid c4">
+      <div class="resultado-card"><div class="lbl">F(${A.dfB}, ${A.dfW})</div><div class="val">${tn(A.F)}</div></div>
+      <div class="resultado-card"><div class="lbl">Valor-p</div><div class="val">${tp(A.p)}</div></div>
+      <div class="resultado-card"><div class="lbl">η² (efecto)</div><div class="val">${tn(A.eta2, 4)}</div></div>
+      <div class="resultado-card"><div class="lbl">ω²</div><div class="val">${tn(A.omega2, 4)}</div></div>
+    </div>
+    <div class="decision-box ${sig ? 'rechaza' : 'no-rechaza'}"><div class="titulo">${sig ? '❌ Se rechaza H₀ — al menos un tratamiento tiene una media distinta' : '✅ No se rechaza H₀ — no hay diferencia significativa entre las medias'} (α = ${tn(R.alpha, 2)})</div></div>
+    <div class="tw"><table class="tabla-an"><thead><tr><th class="l">Fuente</th><th>SC</th><th>gl</th><th>CM</th><th>F</th><th>p</th></tr></thead><tbody>
+      <tr><td class="l">Entre tratamientos</td><td>${tn(A.ssb)}</td><td>${A.dfB}</td><td>${tn(A.msb)}</td><td>${tn(A.F)}</td><td>${tp(A.p)}</td></tr>
+      <tr><td class="l">Error (dentro)</td><td>${tn(A.ssw)}</td><td>${A.dfW}</td><td>${tn(A.msw)}</td><td></td><td></td></tr>
+      <tr><td class="l">Total</td><td>${tn(A.sst)}</td><td>${A.N - 1}</td><td></td><td></td><td></td></tr></tbody></table></div>
+    <div class="chart-titulo">Medias, desviaciones y grupos homogéneos (${esc(NOMBRE_METODO[R.comp.metodo])}, α = ${tn(R.alpha, 2)})</div>
+    <div class="tw"><table class="tabla-an"><thead><tr><th class="l">Tratamiento</th><th>n</th><th>Media</th><th>Desv. est.</th><th>Grupo</th></tr></thead><tbody>${tM}</tbody></table></div>
+    <p class="nota">Los tratamientos que comparten una letra <strong>no</strong> difieren significativamente. Cambia el método en la pestaña Comparaciones.</p>
+    <div class="conclusion-text">${esc(generarResumenAnova(armarPayloadAnova({}, R, document.getElementById('contexto').value, '')))}</div>`;
+}
+
+const AVISO_METODO = {
+  tukey: 'Controla el error global para todas las comparaciones por pares. Es la opción recomendada por defecto (Tukey-Kramer si los n son desiguales).',
+  duncan: 'Más potente (detecta más diferencias) pero NO controla bien el error global: el riesgo de falsos positivos crece con el número de tratamientos. Úsala para exploración, no para decisiones costosas.',
+  snk: 'Student-Newman-Keuls: error por familia de medias adyacentes; punto medio entre Tukey y Duncan. Algo liberal con muchos tratamientos.',
+  lsd: 'DMS / LSD de Fisher: pruebas t sin ajuste. Solo es defendible si el F global es significativo y hay pocos tratamientos (≤ 3). Con muchos pares infla los falsos positivos.',
+  bonferroni: 'Ajusta cada p multiplicando por el número de comparaciones. Muy conservador con muchos tratamientos; útil si solo comparas unos pocos pares planeados.',
+  scheffe: 'El más conservador: válido para cualquier contraste (no solo pares). Úsalo cuando harás comparaciones sugeridas por los datos o contrastes complejos.'
+};
+function tabComp() {
+  const c = R.comp, ords = c.metodo === 'duncan' || c.metodo === 'snk', A = R.A;
+  const filas = c.pares.map(p => {
+    const ic = p.ic ? `[${tn(p.ic[0])} ; ${tn(p.ic[1])}]` : '—';
+    return `<tr class="${p.sig ? 'sig' : 'no-sig'}"><td class="l">${esc(R.nombres[p.i])} − ${esc(R.nombres[p.j])}</td><td>${tn(p.diff)}</td><td>${tn(p.se)}</td>${ords ? `<td>${p.pasos}</td><td>${tn(p.rangoCritico)}</td>` : `<td>${ic}</td>`}<td>${tp(p.p)}</td><td>${sigTxt(p.sig)}</td></tr>`;
+  }).join('');
+  const orden = R.nombres.map((n, i) => i).sort((a, b) => A.medias[b] - A.medias[a]);
+  const tMed = orden.map(i => { const h = Math.sqrt(A.msw / A.n[i]) * MV.invT(1 - R.alpha / 2, A.dfW); return `<tr><td class="l">${esc(R.nombres[i])}</td><td>${A.n[i]}</td><td>${tn(A.medias[i])}</td><td>[${tn(A.medias[i] - h)} ; ${tn(A.medias[i] + h)}]</td><td><span class="letra">${c.letras[i]}</span></td></tr>`; }).join('');
+  const k = A.k; let mat = `<tr><th></th>${R.nombres.map(n => `<th>${esc(n)}</th>`).join('')}</tr>`;
+  for (let i = 0; i < k; i++) { mat += `<tr><th class="l">${esc(R.nombres[i])}</th>` + R.nombres.map((_, j) => { if (i === j) return '<td class="n">·</td>'; const p = c.pares.find(x => (x.i === i && x.j === j) || (x.i === j && x.j === i)); return `<td class="${p.sig ? 's' : ''}">${tp(p.p)}</td>`; }).join('') + '</tr>'; }
+  return `<div class="ctl"><div><label>Prueba de rangos múltiples</label><select id="sel-metodo" onchange="cambiarMetodo(this.value)">${Object.keys(NOMBRE_METODO).map(m => `<option value="${m}"${m === c.metodo ? ' selected' : ''}>${NOMBRE_METODO[m]}</option>`).join('')}</select></div></div>
+    <p class="nota aviso">${esc(AVISO_METODO[c.metodo])}${A.p >= R.alpha ? ' ⚠ El ANOVA global no fue significativo: interpreta con cautela cualquier diferencia por pares.' : ''}</p>
+    <div class="chart-titulo">Tratamientos ordenados por media (IC ${tn((1 - R.alpha) * 100, 0)} % individuales con el error combinado)</div>
+    <div class="tw"><table class="tabla-an"><thead><tr><th class="l">Tratamiento</th><th>n</th><th>Media</th><th>IC de la media</th><th>Grupo</th></tr></thead><tbody>${tMed}</tbody></table></div>
+    <div class="chart-titulo">Comparaciones por pares — ${esc(NOMBRE_METODO[c.metodo])}</div>
+    <div class="tw"><table class="tabla-an"><thead><tr><th class="l">Par</th><th>Diferencia</th><th>EE</th>${ords ? '<th>Pasos (p)</th><th>Rango crítico</th>' : '<th>IC de la diferencia</th>'}<th>p${ords ? '' : ' ajustado'}</th><th>Conclusión</th></tr></thead><tbody>${filas}</tbody></table></div>
+    <div class="chart-titulo">Matriz de valores p (resaltado = diferencia significativa)</div>
+    <div class="tw"><table class="tabla-an pmat">${mat}</table></div>
+    ${ords ? '<p class="nota">En Duncan y SNK la significancia de un par depende de cuántos tratamientos separan las medias ordenadas y se aplica la regla de “no significancia dentro de un subconjunto homogéneo”; el p mostrado corresponde al rango de ese par.</p>' : ''}`;
+}
+function cambiarMetodo(m) { R.comp = MV.comparar(R.grupos, m, R.alpha); renderTab('comp'); }
+function postComp() { }
+
+// ── Gráficas ──
+const BASE = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a2340', borderColor: '#2a3a5c', borderWidth: 1, titleColor: '#e8edf8', bodyColor: '#8a9bb8' } } };
+const ejes = (x, y) => ({ x: Object.assign({ ticks: { color: '#8a9bb8', font: { size: 10 } }, grid: { color: 'rgba(42,58,92,0.3)' }, title: { display: !!x, text: x || '', color: '#8a9bb8' } }, {}), y: { ticks: { color: '#8a9bb8', font: { size: 10 } }, grid: { color: 'rgba(42,58,92,0.4)' }, title: { display: !!y, text: y || '', color: '#8a9bb8' } } });
+const pluginLetras = { id: 'letras', afterDatasetsDraw(chart, a, o) { if (!o || !o.letras) return; const { ctx } = chart, m = chart.getDatasetMeta(0); ctx.save(); ctx.font = 'bold 13px Sora'; ctx.fillStyle = '#ffd700'; ctx.textAlign = 'center'; m.data.forEach((b, i) => { const top = o.tops ? chart.scales.y.getPixelForValue(o.tops[i]) : b.y; ctx.fillText(o.letras[i], b.x, top - 8); }); ctx.restore(); } };
+const pluginCero = { id: 'cero', afterDatasetsDraw(chart, a, o) { if (!o || !o.eje) return; const { ctx, chartArea: ca } = chart, s = chart.scales[o.eje], px = s.getPixelForValue(0); if (px < ca.left || px > ca.right) return; ctx.save(); ctx.strokeStyle = '#ff6b6b'; ctx.setLineDash([5, 4]); ctx.beginPath(); if (o.eje === 'x') { ctx.moveTo(px, ca.top); ctx.lineTo(px, ca.bottom); } else { ctx.moveTo(ca.left, px); ctx.lineTo(ca.right, px); } ctx.stroke(); ctx.restore(); } };
+const pluginBigotes = { id: 'bigotes', afterDatasetsDraw(chart, a, o) { if (!o || !o.ic) return; const { ctx } = chart, m = chart.getDatasetMeta(0), y = chart.scales.y; ctx.save(); ctx.strokeStyle = '#e8edf8'; ctx.lineWidth = 1.5; m.data.forEach((b, i) => { const lo = y.getPixelForValue(o.ic[i][0]), hi = y.getPixelForValue(o.ic[i][1]); ctx.beginPath(); ctx.moveTo(b.x, lo); ctx.lineTo(b.x, hi); ctx.moveTo(b.x - 6, lo); ctx.lineTo(b.x + 6, lo); ctx.moveTo(b.x - 6, hi); ctx.lineTo(b.x + 6, hi); ctx.stroke(); }); ctx.restore(); } };
+
+function tabGraf() {
+  return `<p class="nota">Las gráficas ayudan a ver <em>cuáles</em> tratamientos difieren y <em>cuánto</em>. Usa el método elegido en la pestaña Comparaciones (${esc(NOMBRE_METODO[R.comp.metodo])}).</p>
+    <div class="chart-titulo">1. Media por tratamiento con IC y letras de grupos homogéneos</div><div class="chart-container alto"><canvas id="c-medias"></canvas></div>
+    <div class="chart-titulo">2. Datos individuales (puntos) y media (rombo) — revisa dispersión y atípicos</div><div class="chart-container alto"><canvas id="c-puntos"></canvas></div>
+    <div class="chart-titulo">3. Diferencias entre pares (a la izquierda/derecha del cero cuando son significativas)</div><div class="chart-container" id="wrap-forest"><canvas id="c-forest"></canvas></div>
+    <div class="chart-titulo">4. Cajas por tratamiento (mínimo, Q1, mediana, Q3, máximo)</div><div class="chart-container alto"><canvas id="c-cajas"></canvas></div>`;
+}
+function cuantil(a, p) { const s = [...a].sort((x, y) => x - y), h = (s.length - 1) * p, lo = Math.floor(h), hi = Math.ceil(h); return s[lo] + (s[hi] - s[lo]) * (h - lo); }
+function postGraf() {
+  const A = R.A, nom = R.nombres, col = nom.map((_, i) => COLORES[i % COLORES.length]);
+  const ic = A.medias.map((m, i) => { const h = Math.sqrt(A.msw / A.n[i]) * MV.invT(1 - R.alpha / 2, A.dfW); return [m - h, m + h]; });
+  charts.medias = new Chart(document.getElementById('c-medias'), { type: 'bar', data: { labels: nom, datasets: [{ data: A.medias, backgroundColor: col.map(c => c + '77'), borderColor: col, borderWidth: 2 }] }, options: Object.assign({}, BASE, { layout: { padding: { top: 22 } }, plugins: Object.assign({}, BASE.plugins, { letras: { letras: R.comp.letras, tops: ic.map(x => x[1]) }, bigotes: { ic } }), scales: ejes(null, 'Media') }), plugins: [pluginLetras, pluginBigotes] });
+  const pts = []; R.grupos.forEach((g, i) => g.forEach((v, j) => pts.push({ x: i + ((j % 7) - 3) * 0.045, y: v })));
+  charts.puntos = new Chart(document.getElementById('c-puntos'), { type: 'scatter', data: { datasets: R.grupos.map((g, i) => ({ label: nom[i], data: g.map((v, j) => ({ x: i + ((j % 7) - 3) * 0.05, y: v })), backgroundColor: col[i] + 'cc', pointRadius: 5 })).concat([{ label: 'Media', data: A.medias.map((m, i) => ({ x: i, y: m })), pointStyle: 'rectRot', pointRadius: 9, backgroundColor: '#ffd700', borderColor: '#0a0e1a', borderWidth: 1.5 }]) }, options: Object.assign({}, BASE, { scales: { x: { min: -0.6, max: A.k - 0.4, ticks: { color: '#8a9bb8', font: { size: 10 }, stepSize: 1, callback: v => Number.isInteger(v) && nom[v] ? nom[v] : '' }, grid: { display: false } }, y: ejes(null, 'Respuesta').y } }) });
+  const pares = R.comp.pares, etq = pares.map(p => nom[p.i] + ' − ' + nom[p.j]);
+  document.getElementById('wrap-forest').style.height = Math.max(200, 34 * pares.length + 70) + 'px';
+  charts.forest = new Chart(document.getElementById('c-forest'), { type: 'bar', data: { labels: etq, datasets: [{ data: pares.map(p => p.ic ? [p.ic[0], p.ic[1]] : [Math.min(0, p.diff), Math.max(0, p.diff)]), backgroundColor: pares.map(p => p.sig ? 'rgba(0,255,157,.55)' : 'rgba(138,155,184,.35)'), borderColor: pares.map(p => p.sig ? '#00ff9d' : '#8a9bb8'), borderWidth: 1.5, borderSkipped: false }] }, options: Object.assign({}, BASE, { indexAxis: 'y', plugins: Object.assign({}, BASE.plugins, { cero: { eje: 'x' } }), scales: { x: Object.assign(ejes('Diferencia de medias' + (R.comp.pares[0].ic ? ' (IC ' + tn((1 - R.alpha) * 100, 0) + ' %)' : ''), null).x), y: { ticks: { color: '#8a9bb8', font: { size: 10 } }, grid: { display: false } } } }), plugins: [pluginCero] });
+  const q = R.grupos.map(g => [Math.min(...g), cuantil(g, .25), cuantil(g, .5), cuantil(g, .75), Math.max(...g)]);
+  const pluginCaja = { id: 'caja', afterDatasetsDraw(chart) { const { ctx } = chart, x = chart.scales.x, y = chart.scales.y, w = x.width / q.length * 0.28; ctx.save(); q.forEach((v, i) => { const cx = x.getPixelForValue(i), P = z => y.getPixelForValue(z); ctx.strokeStyle = col[i]; ctx.fillStyle = col[i] + '44'; ctx.lineWidth = 2; ctx.fillRect(cx - w, P(v[3]), 2 * w, P(v[1]) - P(v[3])); ctx.strokeRect(cx - w, P(v[3]), 2 * w, P(v[1]) - P(v[3])); ctx.beginPath(); ctx.moveTo(cx - w, P(v[2])); ctx.lineTo(cx + w, P(v[2])); ctx.moveTo(cx, P(v[3])); ctx.lineTo(cx, P(v[4])); ctx.moveTo(cx, P(v[1])); ctx.lineTo(cx, P(v[0])); ctx.moveTo(cx - w / 2, P(v[4])); ctx.lineTo(cx + w / 2, P(v[4])); ctx.moveTo(cx - w / 2, P(v[0])); ctx.lineTo(cx + w / 2, P(v[0])); ctx.stroke(); }); ctx.restore(); } };
+  const all = [].concat(...R.grupos), pad = (Math.max(...all) - Math.min(...all)) * 0.08 || 1;
+  charts.cajas = new Chart(document.getElementById('c-cajas'), { type: 'line', data: { labels: nom, datasets: [{ data: nom.map(() => null) }] }, options: Object.assign({}, BASE, { scales: { x: { offset: true, ticks: { color: '#8a9bb8', font: { size: 10 } }, grid: { display: false } }, y: Object.assign(ejes(null, 'Respuesta').y, { min: Math.min(...all) - pad, max: Math.max(...all) + pad }) } }), plugins: [pluginCaja] });
+}
+
+// ── Supuestos ──
+function filaSup(nombre, est, p, ok, nota) { return `<tr><td class="l">${nombre}</td><td>${est}</td><td>${p}</td><td style="color:${ok === null ? 'var(--text3)' : ok ? 'var(--accent4)' : 'var(--accent3)'}">${ok === null ? '— no evaluable' : ok ? '✓ Se cumple' : '✗ No se cumple'}</td><td class="l" style="font-size:.7rem;color:var(--text3)">${nota}</td></tr>`; }
+function tabSup() {
+  const s = R.sup, a = R.alpha, ru = R.ruta, A = R.A;
+  const sem = (t, ok, txt) => `<div class="sem ${ok === null ? 'na' : ok ? 'ok' : 'no'}"><b>${ok === null ? '⚪' : ok ? '🟢' : '🔴'} ${t}</b>${txt}</div>`;
+  const swTxt = s.sw ? `Shapiro-Wilk p = ${tp(s.sw.p)}` : 'Requiere ≥ 3 datos';
+  const filas = [
+    filaSup('Normalidad de residuos (Shapiro-Wilk)', s.sw ? 'W = ' + tn(s.sw.W, 4) : '—', s.sw ? tp(s.sw.p) : '—', s.sw ? s.sw.p >= a : null, 'Sobre todos los residuos (dato − media de su grupo).'),
+    filaSup('Homogeneidad de varianzas (Levene, Brown-Forsythe)', 'W = ' + tn(s.lev.W), tp(s.lev.p), s.lev.p >= a, 'Con la mediana: robusta ante no normalidad. Es la que se usa para decidir.'),
+    filaSup('Homogeneidad de varianzas (Levene, con la media)', 'W = ' + tn(s.levMedia.W), tp(s.levMedia.p), s.levMedia.p >= a, 'Versión original.'),
+    filaSup('Homogeneidad de varianzas (Bartlett)', isNaN(s.bart.chi2) ? '—' : 'χ² = ' + tn(s.bart.chi2), tp(s.bart.p), isNaN(s.bart.p) ? null : s.bart.p >= a, 'Muy sensible a la no normalidad; úsala solo si los residuos son normales.'),
+    filaSup('Independencia (Durbin-Watson)', s.dw ? 'DW = ' + tn(s.dw.dw) : '—', s.dw ? tp(s.dw.p) : '—', s.dw ? s.dw.p >= a : null, s.dw ? 'Residuos ordenados por orden de ejecución. DW ≈ 2 → independientes.' : 'Ingresa el orden de ejecución para evaluarla.'),
+    filaSup('Independencia (rachas de Wald-Wolfowitz)', s.rachas ? 'R = ' + s.rachas.R : '—', s.rachas ? tp(s.rachas.p) : '—', s.rachas ? s.rachas.p >= a : null, 'Patrones de signo de los residuos en el tiempo.')
+  ].join('');
+  const filasG = R.nombres.map((n, i) => { const w = s.swGrupos[i]; return `<tr><td class="l">${esc(n)}</td><td>${A.n[i]}</td><td>${tn(A.sd[i])}</td><td>${w ? tn(w.W, 4) : '—'}</td><td>${w ? tp(w.p) : '—'}</td></tr>`; }).join('');
+  return `${rutaBox()}
+    <div class="semaforos">
+      ${sem('Normalidad', s.sw ? ru.normOk : null, swTxt)}
+      ${sem('Varianzas iguales', ru.varOk, `Levene p = ${tp(s.lev.p)}<br>Razón de desv. est. máx/mín = ${tn(s.razonVar, 2)}`)}
+      ${sem('Independencia', s.dw ? ru.indepOk : null, s.dw ? `Durbin-Watson = ${tn(s.dw.dw, 2)}` : 'Requiere orden de ejecución; se garantiza aleatorizando el diseño')}
+    </div>
+    <div class="tw"><table class="tabla-an"><thead><tr><th class="l">Prueba</th><th>Estadístico</th><th>p</th><th>Resultado (α = ${tn(a, 2)})</th><th class="l">Nota</th></tr></thead><tbody>${filas}</tbody></table></div>
+    <div class="grid2"><div><div class="chart-titulo">Gráfico Q-Q de residuos (normalidad): los puntos deben seguir la línea</div><div class="chart-container med"><canvas id="c-qq"></canvas></div></div>
+    <div><div class="chart-titulo">Residuos vs. valores ajustados (varianza constante): sin forma de embudo</div><div class="chart-container med"><canvas id="c-res"></canvas></div></div></div>
+    ${s.dw ? `<div class="chart-titulo">Residuos según el orden de ejecución (independencia): sin tendencias ni rachas</div><div class="chart-container med"><canvas id="c-orden"></canvas></div>` : ''}
+    <div class="chart-titulo">Normalidad por tratamiento</div>
+    <div class="tw"><table class="tabla-an"><thead><tr><th class="l">Tratamiento</th><th>n</th><th>Desv. est.</th><th>W</th><th>p</th></tr></thead><tbody>${filasG}</tbody></table></div>
+    <p class="nota">Con pocos datos por grupo (n &lt; 8) las pruebas de normalidad tienen muy poca potencia: apóyate también en el gráfico Q-Q. La independencia depende sobre todo del diseño: aleatoriza el orden de las corridas.</p>`;
+}
+function postSup() {
+  const s = R.sup, r = R.res.r, n = r.length, sd = Math.sqrt(r.reduce((a, v) => a + v * v, 0) / (R.A.dfW)), ord = [...r].map(v => v / sd).sort((a, b) => a - b);
+  const qq = ord.map((v, i) => ({ x: MV.invNormal((i + 1 - 0.375) / (n + 0.25)), y: v })), lim = Math.max(...qq.map(p => Math.abs(p.x)), ...qq.map(p => Math.abs(p.y))) * 1.05;
+  charts.qq = new Chart(document.getElementById('c-qq'), { type: 'scatter', data: { datasets: [{ data: qq, backgroundColor: '#00d4ffcc', pointRadius: 4 }, { type: 'line', data: [{ x: -lim, y: -lim }, { x: lim, y: lim }], borderColor: '#ff6b6b', borderDash: [5, 4], pointRadius: 0, borderWidth: 1.5 }] }, options: Object.assign({}, BASE, { scales: { x: ejes('Cuantiles teóricos', null).x, y: ejes(null, 'Residuos estandarizados').y } }) });
+  charts.res = new Chart(document.getElementById('c-res'), { type: 'scatter', data: { datasets: [{ data: r.map((v, i) => ({ x: R.res.aj[i], y: v })), backgroundColor: R.res.gi.map(g => COLORES[g % COLORES.length] + 'cc'), pointRadius: 4 }] }, options: Object.assign({}, BASE, { plugins: Object.assign({}, BASE.plugins, { cero: { eje: 'y' } }), scales: { x: ejes('Valor ajustado (media del grupo)', null).x, y: ejes(null, 'Residuo').y } }), plugins: [pluginCero] });
+  if (s.dw) charts.orden = new Chart(document.getElementById('c-orden'), { type: 'line', data: { labels: s.ordenes, datasets: [{ data: s.resOrden, borderColor: '#7b61ff', backgroundColor: '#7b61ff', pointRadius: 4, tension: 0, borderWidth: 1.5 }] }, options: Object.assign({}, BASE, { plugins: Object.assign({}, BASE.plugins, { cero: { eje: 'y' } }), scales: { x: ejes('Orden de ejecución', null).x, y: ejes(null, 'Residuo').y } }), plugins: [pluginCero] });
+}
+
+// ── Potencia ──
+function calcPot() {
+  const c = cfgPot, k = c.k, alpha = R.alpha, sigma = c.sigma, out = {};
+  const f = d => MV.fDesdeDiferencia(d, sigma, k);
+  out.f = f(c.delta); out.nReq = MV.tamanoMuestra(k, out.f, alpha, c.pot); out.nActual = Math.min(...R.A.n);
+  out.potActual = MV.potencia(k, out.nActual, out.f, alpha);
+  out.minDet = MV.diferenciaMinima(k, out.nActual, sigma, alpha, c.pot);
+  out.costoTot = (out.nReq && c.costo > 0) ? out.nReq * k * c.costo : null;
+  if (c.presupuesto > 0 && c.costo > 0) { out.nPres = Math.floor(c.presupuesto / (c.costo * k)); if (out.nPres >= 2) { out.potPres = MV.potencia(k, out.nPres, out.f, alpha); out.minDetPres = MV.diferenciaMinima(k, out.nPres, sigma, alpha, c.pot); } }
+  return out;
+}
+function tabPot() {
+  const A = R.A, c = cfgPot;
+  return `<p class="nota aviso">La potencia es la probabilidad de detectar una diferencia real. Fija la <strong>diferencia mínima Δ que sería importante en la práctica</strong> (entre la media más alta y la más baja), la variabilidad σ esperada y la potencia deseada: la herramienta te dice cuántas repeticiones necesitas y cuánto cuestan. La potencia “observada” de tus datos (<strong>${tn(R.pot.obs, 3)}</strong>) es solo referencial: calculada con los mismos datos dice poco; planifica con un Δ de importancia práctica.</p>
+    <div class="ctl">
+      <div><label>Tratamientos (k)</label><input type="number" id="p-k" min="2" max="20" value="${c.k}" oninput="actPot()"></div>
+      <div><label>σ (desv. del error)</label><input type="number" id="p-sigma" step="any" value="${tn(c.sigma, 4).replace(',', '.')}" oninput="actPot()"></div>
+      <div><label>Δ a detectar</label><input type="number" id="p-delta" step="any" value="${tn(c.delta, 4).replace(',', '.')}" oninput="actPot()"></div>
+      <div><label>Potencia deseada</label><select id="p-pot" onchange="actPot()">${[0.7, 0.8, 0.9, 0.95].map(v => `<option value="${v}"${v === c.pot ? ' selected' : ''}>${v}</option>`).join('')}</select></div>
+      <div><label>Costo por corrida</label><input type="number" id="p-costo" step="any" min="0" value="${c.costo}" placeholder="opcional" oninput="actPot()"></div>
+      <div><label>Presupuesto total</label><input type="number" id="p-pres" step="any" min="0" value="${c.presupuesto}" placeholder="opcional" oninput="actPot()"></div>
+    </div>
+    <div id="pot-res"></div>
+    <div class="chart-titulo">Curva de potencia según repeticiones por tratamiento (α = ${tn(R.alpha, 2)})</div><div class="chart-container alto"><canvas id="c-pot"></canvas></div>
+    <p class="nota">Δ se interpreta como la diferencia entre las dos medias extremas con el resto en el centro (caso mínimo de efecto para ese Δ). Con σ estimada de una prueba piloto, la potencia real puede variar.</p>`;
+}
+function leerPot() { const g = id => parseFloat(document.getElementById(id).value); const k = Math.round(g('p-k')), s = g('p-sigma'), d = g('p-delta'); if (k >= 2 && s > 0 && d > 0) { cfgPot.k = k; cfgPot.sigma = s; cfgPot.delta = d; } cfgPot.pot = g('p-pot'); cfgPot.costo = isNaN(g('p-costo')) ? '' : g('p-costo'); cfgPot.presupuesto = isNaN(g('p-pres')) ? '' : g('p-pres'); }
+function money(v) { return '$ ' + Math.round(v).toLocaleString('es-CO'); }
+function actPot() { leerPot(); postPot(true); }
+function postPot(solo) {
+  const c = cfgPot, o = calcPot(), A = R.A, k = c.k;
+  const tarjeta = (l, v, s) => `<div class="resultado-card"><div class="lbl">${l}</div><div class="val">${v}</div>${s ? `<div style="font-size:.64rem;color:var(--text3);margin-top:3px">${s}</div>` : ''}</div>`;
+  let h = `<div class="resultado-grid c4">${tarjeta('Repeticiones / trat.', o.nReq || '> 5000', 'para potencia ' + tn(c.pot, 2))}${tarjeta('Corridas totales', o.nReq ? o.nReq * k : '—', k + ' trat.')}${tarjeta('Potencia con tu n', tn(o.potActual, 3), 'n = ' + o.nActual + ' por trat., Δ = ' + tn(c.delta, 3))}${tarjeta('Δ mínimo detectable', tn(o.minDet.delta, 3), 'con n = ' + o.nActual + ' y pot. ' + tn(c.pot, 2))}</div>`;
+  if (o.costoTot !== null) h += `<p class="conclusion-text">💰 Costo estimado del diseño: <strong>${money(o.costoTot)}</strong> (${o.nReq} repeticiones × ${k} tratamientos × ${money(c.costo)} por corrida).</p>`;
+  if (o.nPres !== undefined) h += o.nPres >= 2 ? `<p class="conclusion-text">🧾 Con el presupuesto de ${money(c.presupuesto)} alcanzan <strong>${o.nPres}</strong> repeticiones por tratamiento (${o.nPres * k} corridas): potencia para Δ = ${tn(c.delta, 3)} de <strong>${tn(o.potPres, 3)}</strong>${o.potPres >= c.pot ? ' (cumple la meta)' : ' (no alcanza la meta de ' + tn(c.pot, 2) + ')'}; con ese n solo detectarías diferencias de al menos <strong>${tn(o.minDetPres.delta, 3)}</strong>.</p>` : `<p class="nota aviso">El presupuesto no alcanza ni para 2 repeticiones por tratamiento.</p>`;
+  document.getElementById('pot-res').innerHTML = h;
+  if (solo && charts.pot) { charts.pot.destroy(); }
+  const maxN = Math.max(o.nReq ? o.nReq + 4 : 20, 10), ns = Array.from({ length: maxN - 1 }, (_, i) => i + 2), niveles = [[0.75, '#ff8c42'], [1, '#00d4ff'], [1.25, '#00ff9d']];
+  const ds = niveles.map(([m, col]) => ({ label: 'Δ = ' + tn(c.delta * m, 3), data: ns.map(n => MV.potencia(k, n, MV.fDesdeDiferencia(c.delta * m, c.sigma, k), R.alpha)), borderColor: col, backgroundColor: col, pointRadius: 0, borderWidth: m === 1 ? 3 : 1.8, tension: .25 }));
+  ds.push({ label: 'Meta ' + tn(c.pot, 2), data: ns.map(() => c.pot), borderColor: '#ff6b6b', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5 });
+  charts.pot = new Chart(document.getElementById('c-pot'), { type: 'line', data: { labels: ns, datasets: ds }, options: Object.assign({}, BASE, { plugins: Object.assign({}, BASE.plugins, { legend: { display: true, labels: { color: '#8a9bb8', font: { size: 10 } } } }), scales: { x: ejes('Repeticiones por tratamiento', null).x, y: Object.assign(ejes(null, 'Potencia').y, { min: 0, max: 1 }) } }) });
+}
+
+// ── No paramétrico / robusto ──
+
+function procKW() {
+  const kw = R.kw, A = R.A, N = A.N, k = A.k, a = R.alpha, nom = R.nombres;
+  const todos = [], etq = []; R.grupos.forEach((g, i) => g.forEach(v => { todos.push(v); etq.push(i); }));
+  const rk = MV.rankAvg(todos).r;
+  const orden = todos.map((v, i) => i).sort((x, y) => todos[x] - todos[y] || x - y);
+  const filasOrd = orden.map((ix, pos) => `<tr><td>${pos + 1}</td><td>${tn(todos[ix], 2)}</td><td class="l">${esc(nom[etq[ix]])}</td><td><strong>${tn(rk[ix], 1)}</strong></td></tr>`).join('');
+  const rangosG = R.grupos.map(() => []); todos.forEach((v, i) => rangosG[etq[i]].push(rk[i]));
+  const sumas = rangosG.map(r => r.reduce((x, y) => x + y, 0));
+  const filasR = nom.map((n, i) => `<tr><td class="l">${esc(n)}</td><td class="l" style="font-family:'Space Mono',monospace;font-size:.74rem">${rangosG[i].map(v => tn(v, 1)).join(' + ')}</td><td>${A.n[i]}</td><td><strong>${tn(sumas[i], 1)}</strong></td><td>${tn(sumas[i] / A.n[i], 2)}</td></tr>`).join('');
+  const total = N * (N + 1) / 2, sumaTerm = sumas.map((Ri, i) => `${tn(Ri, 1)}²/${A.n[i]}`).join(' + '), sumaVal = sumas.map((Ri, i) => tn(Ri * Ri / A.n[i], 3)).join(' + ');
+  const sumaNum = sumas.reduce((s2, Ri, i) => s2 + Ri * Ri / A.n[i], 0), Hs = 12 / (N * (N + 1)) * sumaNum - 3 * (N + 1);
+  const tc = kw.ties.reduce((s2, t) => s2 + t * t * t - t, 0), C = 1 - tc / (N * N * N - N);
+  let lo = 0, hi = 500; for (let t = 0; t < 100; t++) { const m = (lo + hi) / 2; if (MV.chi2SF(m, kw.df) > a) lo = m; else hi = m; } const crit = (lo + hi) / 2;
+  const rech = kw.H > crit, ties = kw.ties.length ? kw.ties.map(t => `${t} datos empatados`).join(', ') : 'no hay empates';
+  const tcTxt = kw.ties.length ? kw.ties.map(t => `(${t}³ − ${t})`).join(' + ') + ' = ' + tc : '0';
+  let h = `<h3 style="margin-top:1.2rem">Solución manual paso a paso — Kruskal-Wallis</h3>
+    <p class="nota">Así se resolvería a mano el ejercicio con tus datos (k = ${k} tratamientos, N = ${N} observaciones, α = ${tn(a, 2)}).</p>
+    <div class="paso"><b>Paso 1. Planteamiento de hipótesis</b><br>H₀: las ${k} poblaciones tienen la misma distribución (las medianas son iguales).<br>H₁: al menos un tratamiento tiene una distribución desplazada (mediana distinta).</div>
+    <div class="paso"><b>Paso 2. Ordenar todos los datos juntos y asignar rangos</b><br>Se mezclan los ${N} datos y se ordenan de menor a mayor. Al menor le corresponde el rango 1. En empates se promedian los rangos (${ties}).
+      <div class="tw" style="max-height:280px;overflow-y:auto;margin-top:.5rem"><table class="tabla-an"><thead><tr><th>Posición</th><th>Dato</th><th class="l">Tratamiento</th><th>Rango</th></tr></thead><tbody>${filasOrd}</tbody></table></div></div>
+    <div class="paso"><b>Paso 3. Sumar los rangos de cada tratamiento (Rᵢ)</b>
+      <div class="tw" style="margin-top:.5rem"><table class="tabla-an"><thead><tr><th class="l">Tratamiento</th><th class="l">Rangos</th><th>nᵢ</th><th>Rᵢ</th><th>R̄ᵢ = Rᵢ/nᵢ</th></tr></thead><tbody>${filasR}<tr><td class="l"><strong>Total</strong></td><td></td><td>${N}</td><td><strong>${tn(sumas.reduce((x, y) => x + y, 0), 1)}</strong></td><td></td></tr></tbody></table></div>
+      Comprobación: N(N+1)/2 = ${N}·${N + 1}/2 = ${tn(total, 1)} ✓</div>
+    <div class="paso"><b>Paso 4. Calcular el estadístico H</b><br>H = [12 / (N(N+1))] · Σ(Rᵢ²/nᵢ) − 3(N+1)<br>
+      Σ(Rᵢ²/nᵢ) = ${sumaTerm}<br>Σ(Rᵢ²/nᵢ) = ${sumaVal} = ${tn(sumaNum, 3)}<br>
+      H = [12 / (${N}·${N + 1})] · ${tn(sumaNum, 3)} − 3·${N + 1} = ${tn(12 / (N * (N + 1)), 5)} · ${tn(sumaNum, 3)} − ${3 * (N + 1)} = <strong>${tn(Hs, 4)}</strong></div>
+    <div class="paso"><b>Paso 5. Corrección por empates</b><br>C = 1 − Σ(t³ − t) / (N³ − N) = 1 − (${tcTxt}) / (${N}³ − ${N}) = ${tn(C, 5)}<br>H corregido = H / C = ${tn(Hs, 4)} / ${tn(C, 5)} = <strong>${tn(kw.H, 4)}</strong>${kw.ties.length ? '' : ' (sin empates la corrección no cambia H)'}</div>
+    <div class="paso"><b>Paso 6. Valor crítico y valor p</b><br>Con k − 1 = ${kw.df} grados de libertad, la distribución χ² da un valor crítico χ²(${tn(1 - a, 2)}; ${kw.df}) = <strong>${tn(crit, 3)}</strong>.<br>Valor p = P(χ²₍${kw.df}₎ ≥ ${tn(kw.H, 4)}) = <strong>${tp(kw.p)}</strong></div>
+    <div class="paso"><b>Paso 7. Decisión</b><br>Regla: se rechaza H₀ si H ≥ χ² crítico (o si p &lt; α).<br>${tn(kw.H, 3)} ${rech ? '≥' : '&lt;'} ${tn(crit, 3)} y p ${rech ? '&lt;' : '≥'} ${tn(a, 2)} → <strong style="color:${rech ? 'var(--accent3)' : 'var(--accent4)'}">${rech ? 'SE RECHAZA H₀' : 'NO SE RECHAZA H₀'}</strong>.</div>
+    <div class="paso"><b>Paso 8. Conclusión</b><br>${rech ? 'Con un nivel de significancia de ' + tn(a, 2) + ' hay evidencia de que al menos un tratamiento tiene una distribución distinta de los demás. Para saber cuáles, se aplican las comparaciones por pares de Dunn (siguiente paso).' : 'Con un nivel de significancia de ' + tn(a, 2) + ' no hay evidencia suficiente para afirmar que los tratamientos difieren; no se hacen comparaciones por pares.'} Tamaño del efecto ε² = H/((N²−1)/(N+1)) = ${tn(kw.epsilon2, 3)}.</div>`;
+  if (rech) {
+    const d = R.dunn, sigma2 = N * (N + 1) / 12 - tc / (12 * (N - 1)), m = d.pares.length;
+    const ord = d.pares.map((c, ix) => ix).sort((x, y) => d.pares[x].pCrudo - d.pares[y].pCrudo);
+    const filasD = d.pares.map(c => { const se = Math.sqrt(sigma2 * (1 / A.n[c.i] + 1 / A.n[c.j])); return `<tr><td class="l">${esc(nom[c.i])} − ${esc(nom[c.j])}</td><td>${tn(sumas[c.i] / A.n[c.i], 2)} − ${tn(sumas[c.j] / A.n[c.j], 2)} = ${tn(c.diff, 2)}</td><td>${tn(se, 3)}</td><td>${tn(c.z, 3)}</td><td>${tp(c.pCrudo)}</td></tr>`; }).join('');
+    const filasH = ord.map((ix, r) => { const c = d.pares[ix], u = a / (m - r); return `<tr class="${c.sig ? 'sig' : 'no-sig'}"><td>${r + 1}</td><td class="l">${esc(nom[c.i])} − ${esc(nom[c.j])}</td><td>${tp(c.pCrudo)}</td><td>${tp(Math.min(1, u))}</td><td>${tp(c.p)}</td><td>${sigTxt(c.sig)}</td></tr>`; }).join('');
+    h += `<div class="paso"><b>Paso 9. Comparaciones por pares (prueba de Dunn con ajuste de Holm)</b><br>Varianza de los rangos: σ² = N(N+1)/12 − Σ(t³−t)/[12(N−1)] = ${N}·${N + 1}/12 − ${tc}/(12·${N - 1}) = ${tn(sigma2, 4)}<br>Para cada par: z = (R̄ᵢ − R̄ⱼ) / √[σ²·(1/nᵢ + 1/nⱼ)]
+      <div class="tw" style="margin-top:.5rem"><table class="tabla-an"><thead><tr><th class="l">Par</th><th>R̄ᵢ − R̄ⱼ</th><th>Error estándar</th><th>z</th><th>p (2 colas)</th></tr></thead><tbody>${filasD}</tbody></table></div>
+      Ajuste de Holm: se ordenan los ${m} valores p de menor a mayor y el de posición r se compara con α/(${m} − r + 1):
+      <div class="tw" style="margin-top:.5rem"><table class="tabla-an"><thead><tr><th>r</th><th class="l">Par</th><th>p crudo</th><th>α/(m−r+1)</th><th>p ajustado</th><th>Conclusión</th></tr></thead><tbody>${filasH}</tbody></table></div>
+      Los tratamientos que comparten letra no difieren: ${nom.map((n, i) => esc(n) + ' = <span class="letra">' + d.letras[i] + '</span>').join(' &nbsp; ')}</div>`;
+  }
+  return h;
+}
+
+function tabNP() {
+  const A = R.A, a = R.alpha, kw = R.kw, d = R.dunn, w = R.welch, g = R.gh;
+  const conc = [['ANOVA clásico (F)', A.p], ['Welch', w ? w.p : null], ['Kruskal-Wallis', kw.p]].map(x => `<tr><td class="l">${x[0]}</td><td>${tp(x[1])}</td><td style="color:${x[1] === null ? 'var(--text3)' : x[1] < a ? 'var(--accent3)' : 'var(--accent4)'}">${x[1] === null ? '— no calculable' : x[1] < a ? 'Hay diferencias' : 'Sin diferencias'}</td></tr>`).join('');
+  const rd = d.pares.map(p => `<tr class="${p.sig ? 'sig' : 'no-sig'}"><td class="l">${esc(R.nombres[p.i])} − ${esc(R.nombres[p.j])}</td><td>${tn(p.diff, 2)}</td><td>${tn(p.z)}</td><td>${tp(p.pCrudo)}</td><td>${tp(p.p)}</td><td>${sigTxt(p.sig)}</td></tr>`).join('');
+  const rg = g ? g.pares.map(p => `<tr class="${p.sig ? 'sig' : 'no-sig'}"><td class="l">${esc(R.nombres[p.i])} − ${esc(R.nombres[p.j])}</td><td>${tn(p.diff)}</td><td>${tn(p.se)}</td><td>${tn(p.df, 1)}</td><td>${tp(p.p)}</td><td>${sigTxt(p.sig)}</td></tr>`).join('') : '';
+  const rm = R.nombres.map((n, i) => `<tr><td class="l">${esc(n)}</td><td>${A.n[i]}</td><td>${tn(MV.median(R.grupos[i]))}</td><td>${tn(kw.rangosMedios[i], 2)}</td><td><span class="letra">${d.letras[i]}</span></td></tr>`).join('');
+  return `${rutaBox()}
+    <div class="chart-titulo">¿Coinciden los tres enfoques?</div>
+    <div class="tw"><table class="tabla-an"><thead><tr><th class="l">Prueba global</th><th>p</th><th>Conclusión (α = ${tn(a, 2)})</th></tr></thead><tbody>${conc}</tbody></table></div>
+    <p class="nota">Si las tres pruebas coinciden, la conclusión es sólida sin importar los supuestos. Si discrepan, guíate por la ruta recomendada arriba.</p>
+    ${procKW()}
+    <h3 style="margin-top:1.4rem">Resumen de Kruskal-Wallis (resultado del software)</h3>
+    <div class="resultado-grid"><div class="resultado-card"><div class="lbl">H (con corrección por empates)</div><div class="val">${tn(kw.H)}</div></div><div class="resultado-card"><div class="lbl">gl</div><div class="val">${kw.df}</div></div><div class="resultado-card"><div class="lbl">Valor-p</div><div class="val">${tp(kw.p)}</div></div></div>
+    <div class="tw"><table class="tabla-an"><thead><tr><th class="l">Tratamiento</th><th>n</th><th>Mediana</th><th>Rango medio</th><th>Grupo (Dunn)</th></tr></thead><tbody>${rm}</tbody></table></div>
+    <div class="chart-titulo">Comparaciones de Dunn (ajuste de Holm)</div>
+    <div class="tw"><table class="tabla-an"><thead><tr><th class="l">Par</th><th>Dif. rangos medios</th><th>z</th><th>p crudo</th><th>p ajustado</th><th>Conclusión</th></tr></thead><tbody>${rd}</tbody></table></div>
+    ${w ? `<h3 style="margin-top:1rem">ANOVA de Welch (varianzas desiguales)</h3>
+    <div class="resultado-grid"><div class="resultado-card"><div class="lbl">F de Welch</div><div class="val">${tn(w.F)}</div></div><div class="resultado-card"><div class="lbl">gl</div><div class="val">${w.df1} ; ${tn(w.df2, 1)}</div></div><div class="resultado-card"><div class="lbl">Valor-p</div><div class="val">${tp(w.p)}</div></div></div>
+    <div class="chart-titulo">Comparaciones de Games-Howell (no asumen varianzas iguales)</div>
+    <div class="tw"><table class="tabla-an"><thead><tr><th class="l">Par</th><th>Diferencia</th><th>EE</th><th>gl</th><th>p</th><th>Conclusión</th></tr></thead><tbody>${rg}</tbody></table></div>
+    <p class="nota">Letras Games-Howell: ${R.nombres.map((n, i) => esc(n) + ' = <span class="letra">' + g.letras[i] + '</span>').join(' &nbsp; ')}</p>` : '<p class="nota aviso">Welch y Games-Howell requieren variabilidad dentro de cada tratamiento.</p>'}
+    <p class="nota">Kruskal-Wallis contrasta si los tratamientos tienen distribuciones desplazadas; asume formas parecidas. No es una prueba de medias sino de rangos (tendencia a valores mayores).</p>`;
+}
+
+
+// ── Código reproducible y reporte ──
+let codLang = 'r', codOp = { supuestos: true, alternativas: true, potencia: true, grafico: true };
+function codigoActual() { return codLang === 'r' ? CodigoANOVA.codigoR(R, codOp) : CodigoANOVA.codigoPython(R, codOp); }
+function tabCod() {
+  const chk = (k, t) => `<label class="opt-chk"><input type="checkbox" ${codOp[k] ? 'checked' : ''} onchange="codOp.${k} = this.checked; actCodigo()"> ${t}</label>`;
+  return `<div class="chart-titulo">📄 Reporte del análisis</div>
+    <p class="nota">Descarga el informe completo (modelo, fórmulas, tablas, gráfico, supuestos y conclusión) con los resultados actuales y el método de comparación elegido (${esc(NOMBRE_METODO[R.comp.metodo])}). El texto de “Describe qué comparan tus tratamientos” se incluye como contexto.</p>
+    <div class="ctl"><button class="btn-sec" onclick="repPDF()">🖨️ PDF (imprimir)</button><button class="btn-sec" onclick="repWord()" id="btn-word">📝 Word (.docx)</button><button class="btn-sec" onclick="repTex()">🧮 LaTeX (.tex)</button><button class="btn-sec" onclick="repTexCopiar()">📋 Copiar LaTeX</button></div>
+    <p class="nota" id="rep-msg"></p>
+    <div class="chart-titulo" style="margin-top:1.2rem">💻 Código reproducible con tus datos</div>
+    <p class="nota">Tus datos ya van incrustados en el código: pégalo en <a href="https://webr.r-wasm.org/latest/" target="_blank" rel="noopener">webR</a> o RStudio (R), o en <a href="https://colab.research.google.com/#create=true" target="_blank" rel="noopener">Google Colab</a> (Python) y ejecútalo para reproducir y verificar estos resultados.</p>
+    <div class="ctl"><div><label>Lenguaje</label><select id="cod-lang" onchange="codLang = this.value; actCodigo()"><option value="r"${codLang === 'r' ? ' selected' : ''}>R</option><option value="py"${codLang === 'py' ? ' selected' : ''}>Python</option></select></div>
+      <div class="opt-grupo">${chk('supuestos', 'Supuestos')}${chk('alternativas', 'Welch / Kruskal-Wallis')}${chk('potencia', 'Potencia')}${chk('grafico', 'Gráfico')}</div></div>
+    <pre class="code-box" id="cod-box"></pre>
+    <div class="ctl"><button class="btn-sec" onclick="copiarCodigo()">📋 Copiar código</button><button class="btn-sec" onclick="descargarCodigo()">⬇️ Descargar archivo</button></div>
+    <p class="nota aviso">El código usa los mismos datos y el método seleccionado; los resultados deben coincidir con los de la calculadora (las pruebas de Duncan y SNK en Python usan una función auxiliar incluida en el código).</p>`;
+}
+function actCodigo() { const el = document.getElementById('cod-box'); if (el) el.textContent = codigoActual(); }
+function postCod() { actCodigo(); }
+function copiarCodigo() { const t = codigoActual(); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => msgRep('Código copiado al portapapeles.'), () => { const r = document.createRange(); r.selectNodeContents(document.getElementById('cod-box')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); msgRep('Selecciona y copia con Ctrl+C.'); }); if (window.gtag) gtag('event', 'copiar_codigo_anova', { lenguaje: codLang }); }
+function descargarCodigo() { ReporteANOVA.descargar(codigoActual(), codLang === 'r' ? 'anova_un_factor.R' : 'anova_un_factor.py', 'text/plain;charset=utf-8'); if (window.gtag) gtag('event', 'descargar_codigo_anova', { lenguaje: codLang }); }
+function msgRep(t) { const m = document.getElementById('rep-msg'); if (m) m.textContent = t; }
+function repCtx() { return document.getElementById('contexto') ? document.getElementById('contexto').value : ''; }
+function repPDF() { ReporteANOVA.imprimir(R, repCtx()); msgRep('En la ventana de impresión elige “Guardar como PDF”.'); if (window.gtag) gtag('event', 'reporte_anova', { formato: 'pdf' }); }
+async function repWord() { const b = document.getElementById('btn-word'); try { b.disabled = true; msgRep('Generando el documento de Word…'); const blob = await ReporteANOVA.docx(R, repCtx()); ReporteANOVA.descargar(blob, 'informe_anova.docx'); msgRep('Listo: se descargó informe_anova.docx.'); if (window.gtag) gtag('event', 'reporte_anova', { formato: 'docx' }); } catch (e) { msgRep('No se pudo generar el Word: ' + e.message); } b.disabled = false; }
+function repTex() { ReporteANOVA.descargar(ReporteANOVA.latex(R, repCtx()), 'informe_anova.tex', 'application/x-tex;charset=utf-8'); msgRep('Listo: se descargó informe_anova.tex (compílalo con pdflatex o súbelo a Overleaf).'); if (window.gtag) gtag('event', 'reporte_anova', { formato: 'tex' }); }
+function repTexCopiar() { const t = ReporteANOVA.latex(R, repCtx()); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => msgRep('Código LaTeX copiado.'), () => msgRep('No se pudo copiar; usa la descarga.')); }
+
+function usarSugerenciaAnova(texto) { document.getElementById('pregunta').value = texto; preguntarAnova(); }
+function preguntarAnova() {
+  if (!currentResultadoAnova) return;
+  const contexto = document.getElementById('contexto')?.value || '', pregunta = document.getElementById('pregunta')?.value || '';
+  const respuesta = generarRespuestaAnova(armarPayloadAnova({}, currentResultadoAnova, contexto, pregunta));
+  const box = document.getElementById('respuesta-box'); box.textContent = respuesta; box.classList.add('visible');
+  if (window.gtag) gtag('event', 'pregunta_anova', { herramienta: 'anova' });
+}
+</script>
+<article class="edu-pro" id="guia-educativa">
+<h2>ANOVA de un factor: comparar tres o más grupos</h2>
+<h3>¿Para qué sirve el ANOVA?</h3>
+<p>El análisis de varianza compara las <strong>medias de tres o más grupos</strong> con una sola prueba. Hacer muchas pruebas t por pares aumentaría la probabilidad de encontrar diferencias falsas; el ANOVA controla ese riesgo evaluando todos los grupos a la vez.</p>
+<h3>La idea: variación entre y dentro de los grupos</h3>
+<p>La variabilidad total se descompone en la <strong>variación entre grupos</strong> (qué tanto difieren las medias) y la <strong>variación dentro de los grupos</strong> (el ruido o error). El estadístico F es su cociente: si las medias difieren mucho más de lo que se esperaría por el azar, F es grande y el valor p pequeño.</p>
+<h3>Supuestos</h3>
+<ul><li>Observaciones independientes.</li><li>Residuos aproximadamente normales en cada grupo.</li><li>Varianzas similares entre grupos (homogeneidad).</li></ul><p>Con grupos de tamaño parecido el ANOVA es bastante robusto, pero con tamaños muy desiguales o varianzas muy distintas conviene revisar alternativas.</p>
+<h3>Cómo saber cuáles tratamientos difieren</h3>
+<p>Un F significativo solo indica que <em>al menos una</em> media es distinta. Para ubicar las diferencias se usan <strong>pruebas de comparaciones múltiples</strong>: <strong>Tukey HSD</strong> controla el error global y es la opción por defecto; <strong>Bonferroni</strong> y <strong>Scheffé</strong> son más conservadores; <strong>Duncan</strong> y <strong>Student-Newman-Keuls</strong> son más potentes pero aceptan más falsos positivos; la <strong>DMS (LSD de Fisher)</strong> solo se recomienda con pocos tratamientos y un F significativo. Los resultados se resumen con <strong>letras compactas</strong>: los tratamientos que comparten letra no difieren.</p>
+<h3>Verificar los supuestos y decidir la ruta</h3>
+<p>La normalidad de los residuos se evalúa con <strong>Shapiro-Wilk</strong> y el gráfico Q-Q; la homogeneidad de varianzas con <strong>Levene</strong> (Brown-Forsythe) o <strong>Bartlett</strong>; la independencia con <strong>Durbin-Watson</strong> o la prueba de rachas cuando se conoce el orden de ejecución, y sobre todo con la aleatorización del diseño. Si se cumple todo, ANOVA clásico con Tukey. Si fallan las varianzas, <strong>Welch con Games-Howell</strong>. Si falla la normalidad con pocos datos, <strong>Kruskal-Wallis con Dunn</strong> o una transformación (logaritmo, raíz cuadrada).</p>
+<h3>Potencia y número de repeticiones</h3>
+<p>La <strong>potencia</strong> es la probabilidad de detectar una diferencia real. Antes de experimentar, fija la diferencia mínima Δ que importa en la práctica, la desviación esperada σ, α y una potencia de 0,80 o más: obtendrás las repeticiones por tratamiento y, multiplicando por el costo de cada corrida, el costo total del diseño. Si el presupuesto limita las repeticiones, la calculadora muestra la potencia alcanzable y el Δ mínimo detectable.</p>
+<h3>Después del ANOVA</h3>
+<p>Un F significativo dice que <em>al menos una</em> media es distinta, pero no cuál. Para identificarlo se usan comparaciones múltiples (por ejemplo, Tukey). Además, el tamaño del efecto (η²) indica qué parte de la variabilidad explica el factor.</p>
+<div class="ejemplo"><h3 style="margin-top:.6rem">Ejemplo resuelto</h3><p>Tres grupos con tres observaciones cada uno: A = (5, 6, 7), B = (8, 9, 10), C = (11, 12, 13). Las medias son 6, 9 y 12 y la media global, 9. La suma de cuadrados entre grupos es 54 (2 grados de libertad) y dentro de grupos, 6 (6 grados de libertad). Los cuadrados medios son 27 y 1, así que F = 27 con valor p ≈ 0,001: se rechaza que las tres medias sean iguales. Luego se aplicarían comparaciones múltiples para saber qué grupos difieren.</p></div>
+<h3>Preguntas frecuentes</h3><details><summary>¿Cómo sé cuáles tratamientos son diferentes después del ANOVA?</summary><p>Con una prueba de comparaciones múltiples como Tukey HSD, Duncan, SNK o Bonferroni. La calculadora muestra letras compactas: los tratamientos que comparten letra no difieren significativamente.</p></details><details><summary>¿Cuántas repeticiones necesito en mi experimento?</summary><p>Depende de la diferencia mínima que quieres detectar, la variabilidad esperada, el nivel de significancia y la potencia deseada (típicamente 0,80). La pestaña Potencia calcula las repeticiones por tratamiento y el costo total.</p></details><details><summary>¿Cómo verifico los supuestos del ANOVA?</summary><p>Normalidad de los residuos con Shapiro-Wilk y el gráfico Q-Q, homogeneidad de varianzas con Levene o Bartlett e independencia con Durbin-Watson si se conoce el orden de ejecución.</p></details><details><summary>¿Cuándo usar Kruskal-Wallis en lugar de ANOVA?</summary><p>Cuando los residuos no son normales y las muestras son pequeñas, o hay valores atípicos que no puedes justificar eliminar. Si solo fallan las varianzas, usa Welch con Games-Howell.</p></details>
+<details><summary>¿Por qué no usar varias pruebas t?</summary><p>Porque cada prueba adicional aumenta la probabilidad total de cometer error tipo I.</p></details>
+<details><summary>¿Qué significa un F grande?</summary><p>Que la variación entre grupos es grande comparada con la variación dentro de ellos.</p></details>
+<details><summary>¿Qué hago si no se cumple la homogeneidad de varianzas?</summary><p>Considera una transformación de los datos, la prueba de Welch o alternativas no paramétricas como Kruskal-Wallis.</p></details>
+<details><summary>¿Un ANOVA significativo prueba causalidad?</summary><p>Solo si el diseño fue experimental con asignación aleatoria; en datos observacionales indica asociación.</p></details>
+<p class="edu-meta" style="font-size:12.5px;color:#666;border-top:1px solid #e0e0dc;margin-top:1.2rem;padding-top:.7rem">Última revisión: noviembre de 2026. Conozca <a href="/metodologia/">cómo se construyen y revisan las herramientas</a>, las <a href="/fuentes/">fuentes de referencia</a> y la <a href="/politica-editorial/">política editorial</a>.</p>
+</article>
+<div class="hp-footer" role="contentinfo">
+  <strong>Estadilab</strong> — estadística interactiva y gratuita en español para estudiantes, docentes e investigadores.<br>
+  Proyecto independiente de Juan Carlos Gaviria Chaverra, docente ocasional de la Universidad de Antioquia.<br>
+  <a href="/">Inicio</a> · <a href="/acerca-de/">Acerca de</a> · <a href="/metodologia/">Metodología</a> · <a href="/fuentes/">Fuentes</a> · <a href="/politica-editorial/">Política editorial</a> · <a href="/contacto/">Contacto</a> · <a href="/privacidad/">Privacidad</a> · <a href="/terminos/">Términos</a>
+  <small>Herramientas de uso académico y orientativo; no reemplazan el criterio de un docente o de un estadístico. Última revisión del sitio: noviembre de 2026. Proyecto hermano de <a href="https://herramientaspro.com.co" rel="noopener">HerramientasPro Colombia</a>.</small>
+</div>
+</body>
+</html>

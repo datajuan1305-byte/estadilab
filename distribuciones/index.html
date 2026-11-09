@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Distribuciones de Probabilidad | Estadilab</title>
+<meta name="description" content="Calculadora interactiva de distribuciones de probabilidad discretas y continuas: binomial, Poisson, normal, exponencial y más. Con panel de contexto y preguntas. Gratis, sin registro.">
+<link rel="canonical" href="https://estadilab.com/distribuciones/">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<!-- Google tag (gtag.js) -->
+<style>
+  :root {
+    --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
+    --panel: #1a2340; --border: #2a3a5c;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent3: #ff6b6b; --accent4: #00ff9d;
+    --text: #e8edf8; --text2: #8a9bb8; --text3: #4a5a78;
+    --gold: #ffd700;
+    --discrete-color: #00d4ff; --continuous-color: #7b61ff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  header { position: relative; z-index: 10; padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%); display: flex; align-items: center; gap: 1.2rem; }
+  .logo-icon { width: 46px; height: 46px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+  .header-text h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-text p { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+  nav.breadcrumb { position: relative; z-index: 10; padding: 10px 2rem 0; font-size: 0.78rem; color: var(--text3); }
+  nav.breadcrumb a { color: var(--accent); text-decoration: none; }
+  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 260px 1fr; grid-template-rows: auto 1fr; min-height: calc(100vh - 100px); }
+  .sidebar { grid-row: 1 / 3; border-right: 1px solid var(--border); background: var(--bg2); padding: 1.2rem 0.8rem; overflow-y: auto; }
+  .sidebar-section { margin-bottom: 1.2rem; }
+  .sidebar-section-title { font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; padding: 0.4rem 0.8rem; margin-bottom: 0.4rem; border-radius: 4px; }
+  .sidebar-section-title.discrete { color: var(--discrete-color); background: rgba(0,212,255,0.08); border-left: 2px solid var(--discrete-color); }
+  .sidebar-section-title.continuous { color: var(--continuous-color); background: rgba(123,97,255,0.08); border-left: 2px solid var(--continuous-color); }
+  .dist-btn { width: 100%; text-align: left; padding: 0.5rem 0.85rem; background: transparent; border: none; border-radius: 6px; color: var(--text2); font-family: 'Sora', sans-serif; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2px; }
+  .dist-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .dist-btn.active.discrete { background: rgba(0,212,255,0.12); color: var(--discrete-color); font-weight: 600; }
+  .dist-btn.active.continuous { background: rgba(123,97,255,0.12); color: var(--continuous-color); font-weight: 600; }
+  .dist-btn .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot.discrete { background: var(--discrete-color); } .dot.continuous { background: var(--continuous-color); }
+  .main-content { padding: 1.6rem 2rem; display: flex; flex-direction: column; gap: 1.4rem; }
+  .disclaimer { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); border-left: 3px solid var(--gold); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: #e8d98a; }
+  .dist-header { display: flex; align-items: flex-start; gap: 1.2rem; padding: 1.2rem; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; }
+  .dist-icon { font-size: 2.2rem; flex-shrink: 0; }
+  .dist-header-text h2 { font-size: 1.25rem; margin-bottom: 0.25rem; }
+  .dist-header-text .formula { font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--accent); background: rgba(0,212,255,0.08); padding: 3px 8px; border-radius: 4px; display: inline-block; margin-bottom: 0.35rem; }
+  .dist-header-text p { font-size: 0.8rem; color: var(--text2); line-height: 1.5; max-width: 600px; }
+  .type-tag { margin-left: auto; padding: 4px 12px; border-radius: 20px; font-size: 0.62rem; font-family: 'Space Mono', monospace; text-transform: uppercase; flex-shrink: 0; }
+  .type-tag.discrete { background: rgba(0,212,255,0.15); color: var(--discrete-color); }
+  .type-tag.continuous { background: rgba(123,97,255,0.15); color: var(--continuous-color); }
+  .calc-grid { display: grid; grid-template-columns: 340px 1fr; gap: 1.2rem; align-items: start; }
+  .input-panel, .chart-panel, .table-panel, .context-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem; }
+  .input-panel h3, .chart-panel h3, .table-panel h3, .context-panel h3 { font-size: 0.72rem; font-family: 'Space Mono', monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); margin-bottom: 1rem; }
+  .param-group { margin-bottom: 0.9rem; }
+  .param-group label { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text2); margin-bottom: 0.35rem; }
+  .param-group label span { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text3); }
+  .param-group input, .param-group textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.82rem; outline: none; }
+  .param-group input:focus, .param-group textarea:focus { border-color: var(--accent); }
+  .query-separator { font-family: 'Space Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text3); text-align: center; margin: 0.9rem 0 0.7rem; }
+  .query-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-bottom: 0.9rem; }
+  .query-type-btn { padding: 0.35rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text2); font-size: 0.68rem; cursor: pointer; text-align: center; font-family: 'Sora', sans-serif; }
+  .query-type-btn.active { background: rgba(0,212,255,0.1); border-color: var(--accent); color: var(--accent); }
+  .calc-btn, .preguntar-btn { width: 100%; padding: 0.7rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-size: 0.88rem; font-weight: 600; cursor: pointer; margin-top: 0.4rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; margin-bottom: 1rem; }
+  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem; text-align: center; }
+  .stat-card .stat-label { font-size: 0.62rem; font-family: 'Space Mono', monospace; color: var(--text3); text-transform: uppercase; margin-bottom: 0.35rem; }
+  .stat-card .stat-value { font-family: 'Space Mono', monospace; font-size: 1.05rem; font-weight: 700; color: var(--accent); }
+  .prob-result { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem; display: flex; align-items: center; gap: 1.6rem; margin-bottom: 1rem; }
+  .prob-main { text-align: center; flex-shrink: 0; }
+  .prob-main .prob-label { font-family: 'Space Mono', monospace; font-size: 0.62rem; color: var(--text3); text-transform: uppercase; margin-bottom: 0.4rem; }
+  .prob-main .prob-value { font-family: 'Space Mono', monospace; font-size: 2.3rem; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--accent4)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .prob-details { flex: 1; }
+  .prob-details .detail-row { display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid var(--border); font-size: 0.78rem; }
+  .prob-details .detail-row .dl { color: var(--text2); }
+  .prob-details .detail-row .dv { font-family: 'Space Mono', monospace; color: var(--text); font-size: 0.75rem; }
+  .chart-container { position: relative; height: 200px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+  th { font-family: 'Space Mono', monospace; font-size: 0.6rem; text-transform: uppercase; color: var(--text3); padding: 0.45rem 0.7rem; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 0.4rem 0.7rem; border-bottom: 1px solid rgba(42,58,92,0.5); font-family: 'Space Mono', monospace; font-size: 0.72rem; color: var(--text2); }
+  tr.highlighted td { background: rgba(0,212,255,0.07); color: var(--text); }
+  .error-box { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.78rem; color: #ff4d6d; margin-top: 0.5rem; display: none; }
+  .welcome { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; gap: 1rem; }
+  .welcome .welcome-icon { font-size: 3.5rem; opacity: 0.6; }
+  .welcome h2 { font-size: 1.4rem; color: var(--text2); font-weight: 300; }
+  .welcome p { font-size: 0.82rem; color: var(--text3); max-width: 400px; line-height: 1.6; }
+  .hidden { display: none !important; }
+
+  /* PANEL DE TABLA / VALOR CRÍTICO */
+  .tabla-inversa-panel { margin-top: 0; }
+  .tabla-inversa-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: start; }
+  .tabla-inversa-row select { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.6rem; color: var(--text); font-family: 'Sora', sans-serif; font-size: 0.78rem; }
+  .tabla-inversa-row button { white-space: nowrap; width: auto; padding: 0.6rem 1.2rem; }
+  #tabla-inversa-resultado.visible { display: block; }
+  @media (max-width: 700px) { .tabla-inversa-row { grid-template-columns: 1fr; } }
+
+  /* PANEL DE CONTEXTO Y PREGUNTAS */
+  .context-panel { grid-column: 1 / -1; }
+  .context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .pregunta-row { display: flex; gap: 0.6rem; margin-top: 0.6rem; }
+  .pregunta-row input { flex: 1; }
+  .pregunta-row button { width: auto; padding: 0.55rem 1.1rem; white-space: nowrap; }
+  .respuesta-box { margin-top: 0.9rem; background: var(--bg3); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 8px; padding: 0.9rem 1rem; font-size: 0.85rem; color: var(--text); line-height: 1.6; display: none; }
+  .respuesta-box.visible { display: block; }
+  .ia-note { font-size: 0.68rem; color: var(--text3); margin-top: 0.5rem; font-style: italic; }
+  .sugerencias { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .sugerencia-chip { font-size: 0.7rem; padding: 0.3rem 0.65rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; color: var(--text2); cursor: pointer; }
+  .sugerencia-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { grid-row: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    .calc-grid, .context-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+    header { padding: 1rem 1.2rem; }
+    .main-content { padding: 1rem; }
+  }
+</style>
+<style id="edu-pro-css">
+.edu-pro{position:relative;z-index:5;max-width:960px;margin:2.5rem auto 0;padding:1.8rem 2rem 3rem;color:var(--text2,#8a9bb8);line-height:1.75;font-size:.95rem;border-top:1px solid var(--border,#2a3a5c)}
+.edu-pro h2{color:var(--text,#e8edf8);font-size:1.35rem;margin:0 0 .8rem}
+.edu-pro h3{color:var(--accent,#00d4ff);font-size:1.02rem;margin:1.4rem 0 .4rem}
+.edu-pro p,.edu-pro ul{margin:0 0 .8rem}.edu-pro ul{padding-left:1.3rem}.edu-pro li{margin-bottom:.35rem}
+.edu-pro strong{color:var(--text,#e8edf8)}.edu-pro code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.85em}
+.edu-pro details{background:var(--panel,#1a2340);border:1px solid var(--border,#2a3a5c);border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem}
+.edu-pro summary{cursor:pointer;color:var(--text,#e8edf8);font-weight:600}.edu-pro details p{margin:.5rem 0 0}
+.edu-pro .ejemplo{background:rgba(0,212,255,.06);border-left:3px solid var(--accent,#00d4ff);padding:.2rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+@media(max-width:700px){.edu-pro{padding:1.4rem 1rem 2.5rem}}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cómo sé qué distribución usar?", "acceptedAnswer": {"@type": "Answer", "text": "Pregúntate qué mide la variable: conteo de éxitos en ensayos fijos (binomial), eventos por unidad de tiempo (Poisson), mediciones continuas simétricas (normal) o tiempos de espera (exponencial)."}}, {"@type": "Question", "name": "¿Qué significa P(X ≤ x)?", "acceptedAnswer": {"@type": "Answer", "text": "Es la probabilidad acumulada: la probabilidad de que la variable sea menor o igual al valor x."}}, {"@type": "Question", "name": "¿La densidad de una continua puede ser mayor que 1?", "acceptedAnswer": {"@type": "Answer", "text": "Sí. La densidad no es una probabilidad; lo que no puede superar 1 es el área total bajo la curva."}}, {"@type": "Question", "name": "¿Cuándo se aproxima una binomial con una normal?", "acceptedAnswer": {"@type": "Answer", "text": "Cuando n es grande y p no está cerca de 0 ni de 1; una regla común es n·p ≥ 5 y n·(1 − p) ≥ 5."}}]}</script>
+<style id="hp-footer-css">
+.hp-footer{margin:2.5rem 0 0;padding:1.5rem 1rem 2rem;border-top:1px solid rgba(128,128,128,.35);text-align:center;font:13px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:inherit;opacity:.9}
+.hp-footer a{color:inherit;text-decoration:underline;margin:0 .35rem}
+.hp-footer small{display:block;margin-top:.4rem;opacity:.8;font-size:11.5px}
+</style>
+<style id="hp-mobile-fix">
+/* Móvil: evita que tablas y resultados ensanchen la página (min-width:auto de los ítems de grid) */
+@media (max-width: 900px){.app>*,.layout>*,.main-content,.calc-grid>*,.panel{min-width:0;max-width:100%}.panel table,.main-content table{display:block;overflow-x:auto;max-width:100%}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">𝜎</div>
+  <div class="header-text">
+    <h1>Distribuciones de Probabilidad</h1>
+    <p>Estadilab · Piloto académico v1.1</p>
+  </div>
+</header>
+
+<nav class="breadcrumb">
+  <a href="/">Estadilab</a> › Distribuciones de Probabilidad
+</nav>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-title discrete">⬡ Discretas</div>
+      <button class="dist-btn discrete" onclick="loadDist('binomial')"><span class="dot discrete"></span>Binomial</button>
+      <button class="dist-btn discrete" onclick="loadDist('uniforme_discreta')"><span class="dot discrete"></span>Uniforme Discreta</button>
+      <button class="dist-btn discrete" onclick="loadDist('hipergeometrica')"><span class="dot discrete"></span>Hipergeométrica</button>
+      <button class="dist-btn discrete" onclick="loadDist('binomial_negativa')"><span class="dot discrete"></span>Binomial Negativa</button>
+      <button class="dist-btn discrete" onclick="loadDist('pascal')"><span class="dot discrete"></span>Pascal</button>
+      <button class="dist-btn discrete" onclick="loadDist('poisson')"><span class="dot discrete"></span>Poisson</button>
+      <button class="dist-btn discrete" onclick="loadDist('geometrica')"><span class="dot discrete"></span>Geométrica</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title continuous">◈ Continuas</div>
+      <button class="dist-btn continuous" onclick="loadDist('normal')"><span class="dot continuous"></span>Normal</button>
+      <button class="dist-btn continuous" onclick="loadDist('uniforme_continua')"><span class="dot continuous"></span>Uniforme Continua</button>
+      <button class="dist-btn continuous" onclick="loadDist('exponencial')"><span class="dot continuous"></span>Exponencial</button>
+      <button class="dist-btn continuous" onclick="loadDist('lognormal')"><span class="dot continuous"></span>Lognormal</button>
+      <button class="dist-btn continuous" onclick="loadDist('logistica')"><span class="dot continuous"></span>Logística</button>
+      <button class="dist-btn continuous" onclick="loadDist('gamma')"><span class="dot continuous"></span>Gamma</button>
+      <button class="dist-btn continuous" onclick="loadDist('beta')"><span class="dot continuous"></span>Beta</button>
+      <button class="dist-btn continuous" onclick="loadDist('ji_cuadrado')"><span class="dot continuous"></span>Ji-Cuadrado (χ²)</button>
+      <button class="dist-btn continuous" onclick="loadDist('t_student')"><span class="dot continuous"></span>t-Student</button>
+      <button class="dist-btn continuous" onclick="loadDist('cauchy')"><span class="dot continuous"></span>Cauchy</button>
+      <button class="dist-btn continuous" onclick="loadDist('weibull')"><span class="dot continuous"></span>Weibull</button>
+      <button class="dist-btn continuous" onclick="loadDist('laplace')"><span class="dot continuous"></span>Laplace</button>
+      <button class="dist-btn continuous" onclick="loadDist('pareto')"><span class="dot continuous"></span>Pareto</button>
+    </div>
+  </aside>
+
+  <main class="main-content" id="main-content">
+    <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-icon">📊</div>
+      <h2>Selecciona una distribución</h2>
+      <p>Elige una distribución del panel lateral para calcular probabilidades, ver estadísticos, describir tu proceso y hacer preguntas sobre el resultado.</p>
+    </div>
+  </main>
+</div>
+
+<script src="js/motor-calculo.js"></script>
+<script src="js/interpretacion.js"></script>
+<script>
+let currentDist = null;
+let currentQueryType = 0;
+let chart = null;
+let currentStats = null;
+
+function loadDist(id) {
+  currentDist = id;
+  currentQueryType = 0;
+  const d = DISTRIBUTIONS[id];
+
+  document.querySelectorAll('.dist-btn').forEach(b => b.classList.remove('active','discrete','continuous'));
+  event.currentTarget.classList.add('active', d.type);
+
+  const main = document.getElementById('main-content');
+  const isCont = d.type === 'continuous';
+
+  main.innerHTML = `
+    <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+    <div class="dist-header">
+      <div class="dist-icon">${d.icon}</div>
+      <div class="dist-header-text">
+        <h2>Distribución ${d.name}</h2>
+        <div class="formula">${d.formula}</div>
+        <p>${d.desc}</p>
+      </div>
+      <div class="type-tag ${d.type}">${d.type === 'discrete' ? 'Discreta' : 'Continua'}</div>
+    </div>
+
+    <div class="calc-grid">
+      <div class="input-panel">
+        <h3>⬡ Parámetros y consulta</h3>
+        ${d.params.map(p => `
+          <div class="param-group">
+            <label>${p.label} <span>${p.hint}</span></label>
+            <input type="number" id="param-${p.id}" value="${p.default}" step="any" onchange="onParamChange()">
+          </div>
+        `).join('')}
+        <div class="query-separator">Tipo de consulta</div>
+        <div class="query-type-grid">
+          ${d.queryTypes.map((q,i) => `<button class="query-type-btn ${i===0?'active':''}" onclick="setQueryType(${i})" id="qt-${i}">${q}</button>`).join('')}
+        </div>
+        <div id="interval-inputs" class="hidden">
+          <div class="param-group"><label>a (límite inferior) <span>real</span></label><input type="number" id="int-a" value="0" step="any" onchange="onParamChange()"></div>
+          <div class="param-group"><label>b (límite superior) <span>real</span></label><input type="number" id="int-b" value="1" step="any" onchange="onParamChange()"></div>
+        </div>
+        <div class="error-box" id="error-box">⚠ Error en los parámetros</div>
+        <button class="calc-btn" onclick="calculate()">▶ Calcular</button>
+      </div>
+
+      <div class="results-panel" id="results-panel">
+        <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:2rem;text-align:center;color:var(--text3);font-size:0.85rem;">
+          Ingresa los parámetros y presiona <strong style="color:var(--text)">Calcular</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-panel tabla-inversa-panel">
+      <h3>📋 Buscar valor crítico (tabla inversa)</h3>
+      <p style="font-size:0.78rem;color:var(--text2);margin-bottom:0.9rem;">Usa los mismos parámetros que ingresaste arriba (excepto el valor de consulta). Dado un área/probabilidad, encuentra el valor de x que la produce — el mismo uso que le das a una tabla Z, t, χ² o F impresa.</p>
+      <div class="tabla-inversa-row">
+        <div class="param-group">
+          <label>Probabilidad objetivo (P) <span>0 &lt; P &lt; 1</span></label>
+          <input type="number" id="tabla-prob" value="0.95" min="0" max="1" step="any">
+        </div>
+        <div class="param-group">
+          <label>Tipo de área <span>&nbsp;</span></label>
+          <select id="tabla-tipo">
+            <option value="leq">P(X ≤ x) = P (cola izquierda)</option>
+            <option value="geq">P(X ≥ x) = P (cola derecha)</option>
+          </select>
+        </div>
+        <button class="calc-btn" style="margin-top:1.4rem;" onclick="buscarValorCritico()">Buscar valor crítico</button>
+      </div>
+      <div id="tabla-inversa-resultado" class="respuesta-box"></div>
+    </div>
+
+    <div class="context-panel">
+      <h3>💬 Contexto de tu análisis y preguntas</h3>
+      <div class="context-grid">
+        <div class="param-group">
+          <label>Describe el proceso o los datos que estás analizando (opcional)</label>
+          <textarea id="contexto" rows="3" placeholder="Ej: Se analizan 20 datos de ventas mensuales de la empresa XYZ para estimar la probabilidad de superar la meta."></textarea>
+        </div>
+        <div class="param-group">
+          <label>Pregunta sobre el resultado</label>
+          <div class="pregunta-row">
+            <input type="text" id="pregunta" placeholder="Ej: ¿qué tan dispersos están los datos?">
+            <button class="preguntar-btn" onclick="preguntar()">Preguntar</button>
+          </div>
+          <div class="sugerencias">
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿qué tan dispersos están los datos?')">Dispersión</span>
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿la distribución es simétrica?')">Simetría</span>
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿hay valores atípicos esperados?')">Valores atípicos</span>
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿qué significa este resultado?')">Interpretar resultado</span>
+          </div>
+        </div>
+      </div>
+      <div class="respuesta-box" id="respuesta-box"></div>
+      <div class="ia-note">Hoy esta respuesta se genera con reglas locales, sin costo. En una fase futura se podrá conectar a IA para preguntas más abiertas.</div>
+    </div>
+  `;
+
+  calculate();
+}
+
+function setQueryType(i) {
+  currentQueryType = i;
+  document.querySelectorAll('.query-type-btn').forEach((b,j) => b.classList.toggle('active', i===j));
+  document.getElementById('interval-inputs').classList.toggle('hidden', i !== 3);
+  calculate();
+}
+
+function onParamChange() {}
+
+function getParams() {
+  const d = DISTRIBUTIONS[currentDist];
+  const p = {};
+  for (const pr of d.params) {
+    const v = parseFloat(document.getElementById(`param-${pr.id}`)?.value);
+    if (isNaN(v)) return null;
+    p[pr.id] = v;
+  }
+  if (currentQueryType === 3) {
+    const a = parseFloat(document.getElementById('int-a')?.value);
+    const b = parseFloat(document.getElementById('int-b')?.value);
+    if (isNaN(a) || isNaN(b)) return null;
+    p.__a = a; p.__b = b;
+  }
+  return p;
+}
+
+function calculate() {
+  if (!currentDist) return;
+  const d = DISTRIBUTIONS[currentDist];
+  const c = CALC[currentDist];
+  const p = getParams();
+  const errBox = document.getElementById('error-box');
+  if (!p) { if(errBox){ errBox.textContent='⚠ Completa todos los parámetros'; errBox.style.display='block'; } return; }
+  if (errBox) errBox.style.display = 'none';
+
+  try {
+    const isCont = d.type === 'continuous';
+    const stats = c.stats(p);
+    currentStats = stats;
+    let probVal, probLabel, probDesc;
+
+    if (isCont) {
+      const x = p.x;
+      const cdf_x = c.cdf(x, p);
+      const pdf_x = c.pdf(x, p);
+      if (currentQueryType === 0) { probVal = cdf_x; probLabel = `P(X ≤ ${x})`; probDesc = 'Probabilidad acumulada'; }
+      else if (currentQueryType === 1) { probVal = 1-cdf_x; probLabel = `P(X ≥ ${x})`; probDesc = 'Cola superior'; }
+      else if (currentQueryType === 2) { probVal = pdf_x; probLabel = `f(${x})`; probDesc = 'Densidad de probabilidad'; }
+      else { probVal = c.cdf(p.__b, p) - c.cdf(p.__a, p); probLabel = `P(${p.__a} ≤ X ≤ ${p.__b})`; probDesc = 'Probabilidad en intervalo'; }
+    } else {
+      const k = Math.round(p.k ?? p.x ?? 0);
+      const pmf_k = c.pmf(k, p);
+      const cdf_k = c.cdf(k, p);
+      if (currentQueryType === 0) { probVal = pmf_k; probLabel = `P(X = ${k})`; probDesc = 'Probabilidad puntual'; }
+      else if (currentQueryType === 1) { probVal = cdf_k; probLabel = `P(X ≤ ${k})`; probDesc = 'Probabilidad acumulada'; }
+      else if (currentQueryType === 2) { probVal = 1-cdf_k+pmf_k; probLabel = `P(X ≥ ${k})`; probDesc = 'Cola superior'; }
+      else { probVal = cdf_k > 0 ? cdf_k - pmf_k : 0; probLabel = `P(X < ${k})`; probDesc = 'Probabilidad estricta'; }
+    }
+    renderResults(stats, probVal, probLabel, probDesc, p, c, d);
+  } catch(e) {
+    if (errBox) { errBox.textContent = '⚠ Error: ' + e.message; errBox.style.display = 'block'; }
+    console.error(e);
+  }
+
+  // Ocultar respuesta anterior al recalcular
+  const rb = document.getElementById('respuesta-box');
+  if (rb) rb.classList.remove('visible');
+}
+
+function fmt(v, dec=6) {
+  if (typeof v === 'string') return v;
+  if (isNaN(v) || !isFinite(v)) return '∞';
+  return parseFloat(v.toFixed(dec)).toString();
+}
+
+function renderResults(stats, probVal, probLabel, probDesc, p, c, d) {
+  const panel = document.getElementById('results-panel');
+  const isCont = d.type === 'continuous';
+  const accentColor = isCont ? 'var(--continuous-color)' : 'var(--discrete-color)';
+
+  panel.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">E[X] · Media</div><div class="stat-value" style="color:${accentColor}">${fmt(stats.E)}</div></div>
+      <div class="stat-card"><div class="stat-label">Var(X)</div><div class="stat-value" style="color:${accentColor}">${fmt(stats.Var)}</div></div>
+      <div class="stat-card"><div class="stat-label">σ · Desv. Est.</div><div class="stat-value" style="color:${accentColor}">${fmt(stats.SD)}</div></div>
+      <div class="stat-card"><div class="stat-label">Asimetría</div><div class="stat-value" style="color:${accentColor}">${fmt(stats.Asim,4)}</div></div>
+    </div>
+    <div class="prob-result">
+      <div class="prob-main">
+        <div class="prob-label">${probDesc}</div>
+        <div class="prob-value">${typeof probVal==='number'?probVal.toFixed(6):'—'}</div>
+      </div>
+      <div class="prob-details">
+        <div class="detail-row"><span class="dl">Consulta</span><span class="dv">${probLabel}</span></div>
+        <div class="detail-row"><span class="dl">Complemento</span><span class="dv">${typeof probVal==='number'?((1-probVal)).toFixed(6):'—'}</span></div>
+        <div class="detail-row"><span class="dl">Curtosis exceso</span><span class="dv">${fmt(stats.Kurt,4)}</span></div>
+      </div>
+    </div>
+    <div class="chart-panel">
+      <h3>◈ Función de ${isCont ? 'Densidad (PDF) y CDF' : 'Masa de Probabilidad (PMF) y CDF'}</h3>
+      <div class="chart-container"><canvas id="dist-chart"></canvas></div>
+    </div>
+    ${isCont ? '' : renderTable(p, c, d)}
+  `;
+  renderChart(p, c, d, isCont);
+}
+
+function renderTable(p, c, d) {
+  const [kMin, kMax] = c.tableRange(p);
+  const qKey = Object.keys(p).find(k => k==='k'||k==='x') || 'k';
+  const kQuery = Math.round(p[qKey] ?? p.k ?? 0);
+  let rows = '';
+  for (let k = kMin; k <= Math.min(kMax, kMin+40); k++) {
+    const pmf = c.pmf(k, p);
+    const cdf_v = c.cdf(k, p);
+    const hl = k===kQuery ? 'highlighted' : '';
+    rows += `<tr class="${hl}"><td>${k}</td><td>${pmf.toFixed(6)}</td><td>${cdf_v.toFixed(6)}</td></tr>`;
+  }
+  return `<div class="table-panel"><h3>⬡ Tabla de probabilidades</h3><table><thead><tr><th>k</th><th>P(X = k)</th><th>P(X ≤ k)</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function renderChart(p, c, d, isCont) {
+  if (chart) { chart.destroy(); chart = null; }
+  const ctx = document.getElementById('dist-chart');
+  if (!ctx) return;
+  const accentColor = isCont ? '#7b61ff' : '#00d4ff';
+  const accent2 = isCont ? '#ff6b6b' : '#00ff9d';
+
+  if (isCont) {
+    const [xMin, xMax] = c.plotRange(p);
+    const n = 300;
+    const xs = Array.from({length:n+1}, (_,i) => xMin + i*(xMax-xMin)/n);
+    const pdfs = xs.map(x => { try { const v=c.pdf(x,p); return isFinite(v)?v:null; } catch{return null;} });
+    const cdfs = xs.map(x => { try { const v=c.cdf(x,p); return isFinite(v)?v:null; } catch{return null;} });
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: xs.map(x => x.toFixed(3)), datasets: [
+        { label: 'PDF f(x)', data: pdfs, borderColor: accentColor, backgroundColor: accentColor+'33', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0, yAxisID: 'y' },
+        { label: 'CDF F(x)', data: cdfs, borderColor: accent2, borderWidth: 2, fill: false, tension: 0.3, pointRadius: 0, yAxisID: 'y2', borderDash:[5,3] }
+      ]},
+      options: chartOptions(false, accentColor)
+    });
+  } else {
+    const [kMin, kMax] = c.tableRange(p);
+    const ks = Array.from({length: Math.min(kMax-kMin+1,50)}, (_,i) => kMin+i);
+    const pmfs = ks.map(k => { try{ return c.pmf(k,p); }catch{ return 0; } });
+    const cdfs = ks.map(k => { try{ return c.cdf(k,p); }catch{ return 0; } });
+    chart = new Chart(ctx, {
+      data: { labels: ks, datasets: [
+        { type:'bar', label: 'PMF P(X=k)', data: pmfs, backgroundColor: accentColor+'88', borderColor: accentColor, borderWidth: 1.5, yAxisID: 'y' },
+        { type:'line', label: 'CDF F(k)', data: cdfs, borderColor: accent2, borderWidth: 2, fill: false, pointRadius: 3, pointBackgroundColor: accent2, tension: 0, yAxisID: 'y2', borderDash:[5,3] }
+      ]},
+      options: chartOptions(true, accentColor)
+    });
+  }
+}
+
+function chartOptions(isBar, accentColor) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { intersect: false, mode: 'index' },
+    plugins: {
+      legend: { labels: { color: '#8a9bb8', font: { family: 'Space Mono', size: 10 }, boxWidth: 20 } },
+      tooltip: { backgroundColor: '#1a2340', borderColor: '#2a3a5c', borderWidth: 1, titleColor: '#e8edf8', bodyColor: '#8a9bb8', titleFont: { family: 'Space Mono', size: 10 }, bodyFont: { family: 'Space Mono', size: 10 } }
+    },
+    scales: {
+      x: { ticks: { color: '#4a5a78', font: { family: 'Space Mono', size: 9 }, maxTicksLimit: 12 }, grid: { color: 'rgba(42,58,92,0.4)' } },
+      y: { position: 'left', ticks: { color: accentColor, font: { family: 'Space Mono', size: 9 } }, grid: { color: 'rgba(42,58,92,0.4)' }, title: { display: true, text: isBar ? 'PMF' : 'PDF', color: accentColor, font: { size: 9 } } },
+      y2: { position: 'right', min: 0, max: 1, ticks: { color: '#00ff9d', font: { family: 'Space Mono', size: 9 } }, grid: { drawOnChartArea: false }, title: { display: true, text: 'CDF', color: '#00ff9d', font: { size: 9 } } }
+    }
+  };
+}
+
+// ═══ PANEL DE CONTEXTO Y PREGUNTAS ═══
+function usarSugerencia(texto) {
+  document.getElementById('pregunta').value = texto;
+  preguntar();
+}
+
+function preguntar() {
+  if (!currentDist || !currentStats) return;
+  const contexto = document.getElementById('contexto')?.value || '';
+  const pregunta = document.getElementById('pregunta')?.value || '';
+  const parametros = getParams();
+
+  const payload = armarPayload(currentDist, parametros, currentStats, contexto, pregunta);
+  const respuesta = generarRespuesta(payload);
+
+  const box = document.getElementById('respuesta-box');
+  box.textContent = respuesta;
+  box.classList.add('visible');
+
+  if (window.gtag) {
+    gtag('event', 'pregunta_estadistica', { herramienta: 'distribuciones_probabilidad' });
+  }
+}
+
+// ═══ TABLA / VALOR CRÍTICO (búsqueda inversa) ═══
+function buscarValorCritico() {
+  if (!currentDist) return;
+  const d = DISTRIBUTIONS[currentDist];
+  const c = CALC[currentDist];
+  const resBox = document.getElementById('tabla-inversa-resultado');
+
+  const params = getParams();
+  const P = parseFloat(document.getElementById('tabla-prob').value);
+  const tipo = document.getElementById('tabla-tipo').value;
+
+  if (!params) {
+    resBox.textContent = '⚠ Completa primero los parámetros del panel de arriba.';
+    resBox.classList.add('visible');
+    return;
+  }
+  if (isNaN(P) || P <= 0 || P >= 1) {
+    resBox.textContent = '⚠ La probabilidad objetivo debe estar estrictamente entre 0 y 1.';
+    resBox.classList.add('visible');
+    return;
+  }
+
+  const targetP = tipo === 'leq' ? P : 1 - P;
+  let x, verificacion;
+
+  if (d.type === 'continuous') {
+    const [lo0, hi0] = c.plotRange(params);
+    const halfWidth = Math.abs(hi0 - lo0) || 1;
+    let lo = lo0 - 4 * halfWidth;
+    let hi = hi0 + 4 * halfWidth;
+    for (let i = 0; i < 100; i++) {
+      const mid = (lo + hi) / 2;
+      if (c.cdf(mid, params) < targetP) lo = mid; else hi = mid;
+    }
+    x = (lo + hi) / 2;
+    verificacion = c.cdf(x, params);
+  } else {
+    const [kMin, kMax] = c.tableRange(params);
+    let k = kMin;
+    const kLimit = kMax + 1000;
+    while (c.cdf(k, params) < targetP && k < kLimit) k++;
+    x = k;
+    verificacion = c.cdf(x, params);
+  }
+
+  const areaTexto = tipo === 'leq' ? `P(X ≤ ${fmt(x, d.type==='continuous'?4:0)}) ≈ ${fmt(verificacion,6)}` : `P(X ≥ ${fmt(x, d.type==='continuous'?4:0)}) ≈ ${fmt(1-verificacion,6)}`;
+
+  resBox.innerHTML = `El valor crítico es <strong style="color:var(--accent)">x ≈ ${fmt(x, d.type==='continuous'?4:0)}</strong>. Verificación: ${areaTexto}.`;
+  resBox.classList.add('visible');
+
+  if (window.gtag) {
+    gtag('event', 'tabla_inversa', { herramienta: 'distribuciones_probabilidad' });
+  }
+}
+</script>
+<article class="edu-pro" id="guia-educativa">
+<h2>Distribuciones de probabilidad: el lenguaje de la incertidumbre</h2>
+<h3>¿Qué es una distribución de probabilidad?</h3>
+<p>Una distribución describe cómo se reparte la probabilidad entre los posibles valores de una variable aleatoria. Si la variable toma valores contables (número de defectos, de llamadas, de aciertos) se habla de distribución <strong>discreta</strong>; si toma cualquier valor en un intervalo (tiempo, peso, temperatura) es <strong>continua</strong>.</p>
+<h3>Las distribuciones más usadas</h3>
+<ul><li><strong>Binomial:</strong> número de éxitos en n ensayos independientes con probabilidad p constante.</li><li><strong>Poisson:</strong> conteo de eventos raros en un intervalo de tiempo o espacio.</li><li><strong>Normal:</strong> la campana simétrica que modela errores de medición y muchos fenómenos naturales.</li><li><strong>Exponencial:</strong> tiempo hasta el siguiente evento en un proceso de Poisson.</li><li><strong>t de Student, ji-cuadrado y F:</strong> base de los intervalos de confianza y las pruebas de hipótesis.</li></ul>
+<h3>Función de probabilidad, densidad y acumulada</h3>
+<p>En variables discretas, la <em>función de masa</em> da P(X = x). En continuas, la <em>densidad</em> no es una probabilidad: la probabilidad es el área bajo la curva. La <em>función acumulada</em> F(x) = P(X ≤ x) permite calcular cualquier probabilidad de un intervalo restando acumuladas. Los <em>cuantiles</em> hacen el camino inverso: dado un porcentaje, encuentran el valor.</p>
+<h3>Cómo usar la calculadora</h3>
+<p>Elige la distribución en el panel lateral, ingresa sus parámetros y el valor o intervalo que te interesa. Obtendrás la probabilidad, los estadísticos (media, varianza) y la gráfica con el área sombreada. Es útil para verificar ejercicios de clase y para entender cómo cambian la forma y la probabilidad al variar los parámetros.</p>
+<div class="ejemplo"><h3 style="margin-top:.6rem">Ejemplo resuelto</h3><p>Una prueba tiene 10 preguntas de verdadero/falso y alguien responde al azar. El número de aciertos es binomial con n = 10 y p = 0,5. La probabilidad de acertar exactamente 6 es P(X = 6) = 0,2051 y la de acertar 6 o menos, P(X ≤ 6) = 0,8281. En otro caso, si una línea recibe en promedio 3 llamadas por minuto, el número de llamadas es Poisson con λ = 3 y P(X = 2) = 0,2240. Ingresa esos parámetros y verifica.</p></div>
+<h3>Errores frecuentes y buenas prácticas</h3>
+<ul><li><strong>Elegir la distribución por el tipo de variable.</strong> Conteos de éxitos en ensayos fijos sugieren binomial; eventos por unidad de tiempo, Poisson; mediciones continuas simétricas, normal.</li><li><strong>Parámetros.</strong> Confirme si el parámetro de dispersión es la varianza o la desviación estándar; confundirlos es un error frecuente.</li><li><strong>Discreta versus continua.</strong> En distribuciones discretas P(X ≤ k) y P(X &lt; k) son distintas; en continuas, coinciden.</li><li><strong>Ajuste.</strong> Antes de asumir que sus datos siguen una distribución, compare un histograma con la curva teórica.</li></ul>
+<h3>Preguntas frecuentes</h3>
+<details><summary>¿Cómo sé qué distribución usar?</summary><p>Pregúntate qué mide la variable: conteo de éxitos en ensayos fijos (binomial), eventos por unidad de tiempo (Poisson), mediciones continuas simétricas (normal) o tiempos de espera (exponencial).</p></details>
+<details><summary>¿Qué significa P(X ≤ x)?</summary><p>Es la probabilidad acumulada: la probabilidad de que la variable sea menor o igual al valor x.</p></details>
+<details><summary>¿La densidad de una continua puede ser mayor que 1?</summary><p>Sí. La densidad no es una probabilidad; lo que no puede superar 1 es el área total bajo la curva.</p></details>
+<details><summary>¿Cuándo se aproxima una binomial con una normal?</summary><p>Cuando n es grande y p no está cerca de 0 ni de 1; una regla común es n·p ≥ 5 y n·(1 − p) ≥ 5.</p></details>
+<p class="edu-meta" style="font-size:12.5px;color:#666;border-top:1px solid #e0e0dc;margin-top:1.2rem;padding-top:.7rem">Última revisión: noviembre de 2026. Conozca <a href="/metodologia/">cómo se construyen y revisan las herramientas</a>, las <a href="/fuentes/">fuentes de referencia</a> y la <a href="/politica-editorial/">política editorial</a>.</p>
+</article>
+
+<div class="hp-footer" role="contentinfo">
+  <strong>Estadilab</strong> — estadística interactiva y gratuita en español para estudiantes, docentes e investigadores.<br>
+  Proyecto independiente de Juan Carlos Gaviria Chaverra, docente ocasional de la Universidad de Antioquia.<br>
+  <a href="/">Inicio</a> · <a href="/acerca-de/">Acerca de</a> · <a href="/metodologia/">Metodología</a> · <a href="/fuentes/">Fuentes</a> · <a href="/politica-editorial/">Política editorial</a> · <a href="/contacto/">Contacto</a> · <a href="/privacidad/">Privacidad</a> · <a href="/terminos/">Términos</a>
+  <small>Herramientas de uso académico y orientativo; no reemplazan el criterio de un docente o de un estadístico. Última revisión del sitio: noviembre de 2026. Proyecto hermano de <a href="https://herramientaspro.com.co" rel="noopener">HerramientasPro Colombia</a>.</small>
+</div>
+</body>
+</html>

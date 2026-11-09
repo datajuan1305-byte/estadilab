@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estadística Descriptiva | Estadilab</title>
+<meta name="description" content="Calculadora de estadística descriptiva completa: recuento, promedio, mediana, moda, varianza, desviación estándar, cuartiles, sesgo, curtosis, y estadísticos robustos (media recortada, winsorizada, DAM, Sbi). Gratis, sin registro.">
+<link rel="canonical" href="https://estadilab.com/descriptiva/">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
+    --panel: #1a2340; --border: #2a3a5c;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent4: #00ff9d;
+    --text: #e8edf8; --text2: #8a9bb8; --text3: #4a5a78;
+    --gold: #ffd700;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  header { position: relative; z-index: 10; padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%); display: flex; align-items: center; gap: 1.2rem; }
+  .logo-icon { width: 46px; height: 46px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+  .header-text h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-text p { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+  nav.breadcrumb { position: relative; z-index: 10; padding: 10px 2rem 0; font-size: 0.78rem; color: var(--text3); }
+  nav.breadcrumb a { color: var(--accent); text-decoration: none; }
+  main { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 1.4rem 2rem 3rem; display: flex; flex-direction: column; gap: 1.2rem; }
+  .disclaimer { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); border-left: 3px solid var(--gold); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: #e8d98a; }
+
+  .layout { display: grid; grid-template-columns: 360px 1fr; gap: 1.2rem; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem; }
+  .panel h3 { font-size: 0.72rem; font-family: 'Space Mono', monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); margin-bottom: 1rem; }
+
+  .archivo-drop {
+    display: block; border: 1.5px dashed var(--border); border-radius: 10px; padding: 0.9rem 1rem;
+    text-align: center; cursor: pointer; margin-bottom: 0.9rem; transition: border-color 0.15s, background 0.15s;
+  }
+  .archivo-drop:hover { border-color: var(--accent); background: rgba(0,212,255,0.04); }
+  .archivo-drop strong { display: block; font-size: 0.85rem; color: var(--text); margin: 0.2rem 0; }
+  .archivo-drop span { font-size: 0.72rem; color: var(--text3); }
+  .archivo-info { font-size: 0.75rem; color: var(--accent4); margin: -0.4rem 0 0.7rem; display: none; }
+  .archivo-info.visible { display: block; }
+
+  textarea#datos-input {
+    width: 100%; min-height: 160px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.7rem 0.9rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.85rem; resize: vertical; outline: none;
+  }
+  textarea#datos-input:focus { border-color: var(--accent); }
+  .input-hint { font-size: 0.72rem; color: var(--text3); margin: 0.5rem 0 0.9rem; line-height: 1.5; }
+  .calc-btn { width: 100%; padding: 0.75rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+  .error-box { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.78rem; color: #ff4d6d; margin-top: 0.6rem; display: none; }
+
+  .resumen-n { display: flex; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .resumen-n .chip { background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--accent); }
+
+  table.stats-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  table.stats-table td { padding: 0.45rem 0.7rem; border-bottom: 1px solid rgba(42,58,92,0.5); }
+  table.stats-table td.label { color: var(--text2); }
+  table.stats-table td.value { font-family: 'Space Mono', monospace; color: var(--text); text-align: right; font-weight: 600; }
+  table.stats-table tr.section-row td { padding-top: 1rem; color: var(--accent4); font-family: 'Space Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid var(--border); }
+
+  .chart-container { position: relative; height: 220px; margin-top: 1rem; }
+
+  .context-panel { grid-column: 1 / -1; }
+  .context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 900px) { .context-grid { grid-template-columns: 1fr; } }
+  .param-group { margin-bottom: 0.9rem; }
+  .param-group label { display: block; font-size: 0.78rem; color: var(--text2); margin-bottom: 0.4rem; }
+  .param-group textarea, .param-group input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.82rem; outline: none; }
+  .pregunta-row { display: flex; gap: 0.6rem; margin-top: 0.6rem; }
+  .pregunta-row input { flex: 1; }
+  .pregunta-row button { width: auto; padding: 0.55rem 1.1rem; white-space: nowrap; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; }
+  .sugerencias { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .sugerencia-chip { font-size: 0.7rem; padding: 0.3rem 0.65rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; color: var(--text2); cursor: pointer; }
+  .sugerencia-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .respuesta-box { margin-top: 0.9rem; background: var(--bg3); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 8px; padding: 0.9rem 1rem; font-size: 0.85rem; color: var(--text); line-height: 1.6; display: none; }
+  .respuesta-box.visible { display: block; }
+  .ia-note { font-size: 0.68rem; color: var(--text3); margin-top: 0.5rem; font-style: italic; }
+
+  .sin-resultado { text-align: center; color: var(--text3); font-size: 0.85rem; padding: 2rem; }
+</style>
+<style id="edu-pro-css">
+.edu-pro{position:relative;z-index:5;max-width:960px;margin:2.5rem auto 0;padding:1.8rem 2rem 3rem;color:var(--text2,#8a9bb8);line-height:1.75;font-size:.95rem;border-top:1px solid var(--border,#2a3a5c)}
+.edu-pro h2{color:var(--text,#e8edf8);font-size:1.35rem;margin:0 0 .8rem}
+.edu-pro h3{color:var(--accent,#00d4ff);font-size:1.02rem;margin:1.4rem 0 .4rem}
+.edu-pro p,.edu-pro ul{margin:0 0 .8rem}.edu-pro ul{padding-left:1.3rem}.edu-pro li{margin-bottom:.35rem}
+.edu-pro strong{color:var(--text,#e8edf8)}.edu-pro code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.85em}
+.edu-pro details{background:var(--panel,#1a2340);border:1px solid var(--border,#2a3a5c);border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem}
+.edu-pro summary{cursor:pointer;color:var(--text,#e8edf8);font-weight:600}.edu-pro details p{margin:.5rem 0 0}
+.edu-pro .ejemplo{background:rgba(0,212,255,.06);border-left:3px solid var(--accent,#00d4ff);padding:.2rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+@media(max-width:700px){.edu-pro{padding:1.4rem 1rem 2.5rem}}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Qué diferencia hay entre varianza y desviación estándar?", "acceptedAnswer": {"@type": "Answer", "text": "La desviación estándar es la raíz cuadrada de la varianza. La varianza está en unidades al cuadrado, por eso la desviación estándar es más fácil de interpretar."}}, {"@type": "Question", "name": "¿Cuándo se divide entre n y cuándo entre n − 1?", "acceptedAnswer": {"@type": "Answer", "text": "Si los datos son una muestra y se quiere estimar la variabilidad de la población, se divide entre n − 1 (varianza muestral). Si son toda la población, se divide entre n."}}, {"@type": "Question", "name": "¿Qué indica una asimetría positiva?", "acceptedAnswer": {"@type": "Answer", "text": "Que la cola derecha de la distribución es más larga: hay unos pocos valores altos que jalan la media por encima de la mediana."}}, {"@type": "Question", "name": "¿Cuántos datos necesito?", "acceptedAnswer": {"@type": "Answer", "text": "Puedes calcular con pocos datos, pero con menos de 20 a 30 observaciones las medidas son poco estables y deben interpretarse con prudencia."}}]}</script>
+<style id="hp-footer-css">
+.hp-footer{margin:2.5rem 0 0;padding:1.5rem 1rem 2rem;border-top:1px solid rgba(128,128,128,.35);text-align:center;font:13px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:inherit;opacity:.9}
+.hp-footer a{color:inherit;text-decoration:underline;margin:0 .35rem}
+.hp-footer small{display:block;margin-top:.4rem;opacity:.8;font-size:11.5px}
+</style>
+<style id="hp-mobile-fix">
+/* Móvil: evita que tablas y resultados ensanchen la página (min-width:auto de los ítems de grid) */
+@media (max-width: 900px){.app>*,.layout>*,.main-content,.calc-grid>*,.panel{min-width:0;max-width:100%}.panel table,.main-content table{display:block;overflow-x:auto;max-width:100%}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">x̄</div>
+  <div class="header-text">
+    <h1>Estadística Descriptiva</h1>
+    <p>Estadilab · Piloto académico</p>
+  </div>
+</header>
+
+<nav class="breadcrumb"><a href="/">Estadilab</a> › Estadística Descriptiva</nav>
+
+<main>
+  <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+
+  <div class="layout">
+    <div class="panel">
+      <h3>Ingresa tus datos</h3>
+      <label class="archivo-drop" for="archivo-input">
+        📂 <strong>Subir archivo CSV o Excel (.xlsx)</strong>
+        <span>Toma automáticamente todos los valores numéricos del archivo</span>
+      </label>
+      <input type="file" id="archivo-input" accept=".csv,.txt,.xlsx,.xls" onchange="handleArchivo(event)" style="display:none;">
+      <div id="archivo-info" class="archivo-info"></div>
+      <div class="query-separator">o pega los datos directamente</div>
+      <textarea id="datos-input" placeholder="Pega o escribe tus números separados por coma, espacio o salto de línea. Ej:&#10;12, 15, 18, 14, 20, 9, 16, 15, 22, 13"></textarea>
+      <p class="input-hint">Acepta separadores por coma, espacio o línea nueva. Puedes pegar directamente una columna copiada de Excel.</p>
+      <button class="calc-btn" onclick="calcularTodo()">Calcular resumen estadístico</button>
+      <div class="error-box" id="error-box"></div>
+    </div>
+
+    <div class="panel" id="resultados-panel">
+      <div class="sin-resultado">Ingresa tus datos y presiona <strong style="color:var(--text)">Calcular resumen estadístico</strong></div>
+    </div>
+  </div>
+
+  <div class="context-panel panel">
+    <h3>💬 Contexto de tu análisis y preguntas</h3>
+    <div class="context-grid">
+      <div class="param-group">
+        <label>Describe el proceso o los datos que estás analizando (opcional)</label>
+        <textarea id="contexto" rows="3" placeholder="Ej: Se analizan 20 datos de renta mensual de la empresa XYZ para evaluar su dispersión."></textarea>
+      </div>
+      <div class="param-group">
+        <label>Pregunta sobre el resultado</label>
+        <div class="pregunta-row">
+          <input type="text" id="pregunta" placeholder="Ej: ¿hay valores atípicos?">
+          <button onclick="preguntar()">Preguntar</button>
+        </div>
+        <div class="sugerencias">
+          <span class="sugerencia-chip" onclick="usarSugerencia('¿qué tan dispersos están los datos?')">Dispersión</span>
+          <span class="sugerencia-chip" onclick="usarSugerencia('¿la distribución es simétrica?')">Simetría</span>
+          <span class="sugerencia-chip" onclick="usarSugerencia('¿hay valores atípicos?')">Valores atípicos</span>
+          <span class="sugerencia-chip" onclick="usarSugerencia('¿qué tan robustos son los estadísticos?')">Robustez</span>
+        </div>
+      </div>
+    </div>
+    <div class="respuesta-box" id="respuesta-box"></div>
+    <div class="ia-note">Hoy esta respuesta se genera con reglas locales, sin costo. En una fase futura se podrá conectar a IA para preguntas más abiertas.</div>
+  </div>
+</main>
+
+<script src="js/motor-descriptiva.js"></script>
+<script src="js/interpretacion-descriptiva.js"></script>
+<script src="../js/hp-codigo.js"></script>
+<script src="js/codigo-descriptiva.js"></script>
+<script>
+let currentDatos = null;
+let currentResultados = null;
+let chart = null;
+
+function parsearDatos(texto) {
+  const partes = texto.split(/[,;\s\n]+/).map(s => s.trim()).filter(s => s.length > 0);
+  const numeros = partes.map(Number);
+  if (numeros.some(isNaN)) return null;
+  return numeros;
+}
+
+function mostrarErrorArchivo(msg) {
+  const errBox = document.getElementById('error-box');
+  errBox.textContent = '⚠ ' + msg;
+  errBox.style.display = 'block';
+  const info = document.getElementById('archivo-info');
+  info.classList.remove('visible');
+}
+
+function completarDesdeArchivo(numeros, nombreArchivo) {
+  if (numeros.length === 0) {
+    mostrarErrorArchivo(`No se encontraron valores numéricos en "${nombreArchivo}". Verifica que la columna de datos no tenga texto mezclado.`);
+    return;
+  }
+  document.getElementById('datos-input').value = numeros.join(', ');
+  document.getElementById('error-box').style.display = 'none';
+  const info = document.getElementById('archivo-info');
+  info.textContent = `✓ ${numeros.length} valores cargados desde "${nombreArchivo}". Revisa la casilla de abajo y presiona Calcular.`;
+  info.classList.add('visible');
+}
+
+function extraerNumerosDeTexto(texto) {
+  return texto.split(/[,;\t\s\n]+/).map(s => s.trim()).filter(s => s.length > 0).map(Number).filter(n => !isNaN(n));
+}
+
+function handleArchivo(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const nombre = file.name.toLowerCase();
+
+  if (nombre.endsWith('.csv') || nombre.endsWith('.txt')) {
+    const reader = new FileReader();
+    reader.onload = (e) => completarDesdeArchivo(extraerNumerosDeTexto(e.target.result), file.name);
+    reader.onerror = () => mostrarErrorArchivo('No se pudo leer el archivo. Intenta de nuevo.');
+    reader.readAsText(file);
+  } else if (nombre.endsWith('.xlsx') || nombre.endsWith('.xls')) {
+    if (typeof XLSX === 'undefined') {
+      mostrarErrorArchivo('No se pudo cargar el lector de Excel (revisa tu conexión a internet) e intenta de nuevo.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const filas = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const numeros = [];
+        filas.forEach(fila => fila.forEach(celda => {
+          if (typeof celda === 'number' && isFinite(celda)) numeros.push(celda);
+          else if (typeof celda === 'string') {
+            const n = parseFloat(celda.replace(',', '.'));
+            if (!isNaN(n) && isFinite(n) && celda.trim() === n.toString()) numeros.push(n);
+          }
+        }));
+        completarDesdeArchivo(numeros, file.name);
+      } catch (err) {
+        mostrarErrorArchivo('No se pudo leer el archivo Excel. Verifica que no esté dañado ni protegido con contraseña.');
+      }
+    };
+    reader.onerror = () => mostrarErrorArchivo('No se pudo leer el archivo. Intenta de nuevo.');
+    reader.readAsArrayBuffer(file);
+  } else {
+    mostrarErrorArchivo('Formato no soportado. Sube un archivo .csv, .xlsx o .xls.');
+  }
+}
+
+function fmt(v, dec = 4) {
+  if (v === null || v === undefined) return 'N/A';
+  if (typeof v === 'string') return v;
+  if (isNaN(v) || !isFinite(v)) return '∞';
+  return parseFloat(v.toFixed(dec)).toString();
+}
+
+function calcularTodo() {
+  const texto = document.getElementById('datos-input').value;
+  const errBox = document.getElementById('error-box');
+  const datos = parsearDatos(texto);
+
+  if (!datos || datos.length === 0) {
+    errBox.textContent = '⚠ No se pudieron leer números válidos. Revisa que solo haya valores numéricos separados por coma, espacio o línea nueva.';
+    errBox.style.display = 'block';
+    return;
+  }
+  if (datos.length < 2) {
+    errBox.textContent = '⚠ Se necesitan al menos 2 datos para calcular la mayoría de estos estadísticos.';
+    errBox.style.display = 'block';
+    return;
+  }
+  errBox.style.display = 'none';
+
+  currentDatos = datos;
+  const r = calcularDescriptiva(datos);
+  currentResultados = r;
+
+  renderResultados(r, datos);
+
+  const rb = document.getElementById('respuesta-box');
+  if (rb) rb.classList.remove('visible');
+}
+
+function renderResultados(r, datos) {
+  const panel = document.getElementById('resultados-panel');
+  const notaTrim = datos.length < 20
+    ? `<p style="font-size:0.72rem;color:var(--text3);margin-top:0.8rem;">ℹ️ Con menos de 20 datos, el recorte del 5% no elimina ningún valor (redondea hacia abajo a 0), por eso la media recortada y la winsorizada pueden coincidir con el promedio simple.</p>`
+    : '';
+
+  panel.innerHTML = `
+    <h3>Resumen estadístico</h3>
+    <div class="resumen-n">
+      <span class="chip">n = ${r.recuento}</span>
+      <span class="chip">Σx = ${fmt(r.suma,2)}</span>
+      <span class="chip">Σx² = ${fmt(r.sumaCuadrados,2)}</span>
+    </div>
+    <table class="stats-table">
+      <tr class="section-row"><td colspan="2">Tendencia central</td></tr>
+      <tr><td class="label">Recuento</td><td class="value">${r.recuento}</td></tr>
+      <tr><td class="label">Promedio</td><td class="value">${fmt(r.promedio)}</td></tr>
+      <tr><td class="label">Mediana</td><td class="value">${fmt(r.mediana)}</td></tr>
+      <tr><td class="label">Moda</td><td class="value">${r.moda.texto}</td></tr>
+      <tr><td class="label">Media Geométrica</td><td class="value">${r.mediaGeometrica === null ? 'No aplica (requiere valores &gt; 0)' : fmt(r.mediaGeometrica)}</td></tr>
+
+      <tr class="section-row"><td colspan="2">Estadísticos robustos</td></tr>
+      <tr><td class="label">Media Recortada 5%</td><td class="value">${fmt(r.mediaRecortada5)}</td></tr>
+      <tr><td class="label">Media Winsorizada 5%</td><td class="value">${fmt(r.mediaWinsorizada5)}</td></tr>
+      <tr><td class="label">Sigma Winsorizada 5%</td><td class="value">${fmt(r.sigmaWinsorizada5)}</td></tr>
+      <tr><td class="label">DAM (desv. absoluta mediana)</td><td class="value">${fmt(r.dam)}</td></tr>
+      <tr><td class="label">Sbi (biweight midvariance)</td><td class="value">${fmt(r.sbi)}</td></tr>
+
+      <tr class="section-row"><td colspan="2">Dispersión</td></tr>
+      <tr><td class="label">Varianza</td><td class="value">${fmt(r.varianza)}</td></tr>
+      <tr><td class="label">Desviación Estándar</td><td class="value">${fmt(r.desviacionEstandar)}</td></tr>
+      <tr><td class="label">Coeficiente de Variación</td><td class="value">${fmt(r.coeficienteVariacion,2)}%</td></tr>
+      <tr><td class="label">Error Estándar</td><td class="value">${fmt(r.errorEstandar)}</td></tr>
+      <tr><td class="label">Mínimo</td><td class="value">${fmt(r.minimo)}</td></tr>
+      <tr><td class="label">Máximo</td><td class="value">${fmt(r.maximo)}</td></tr>
+      <tr><td class="label">Rango</td><td class="value">${fmt(r.rango)}</td></tr>
+
+      <tr class="section-row"><td colspan="2">Posición</td></tr>
+      <tr><td class="label">Cuartil Inferior (Q1)</td><td class="value">${fmt(r.cuartilInferior)}</td></tr>
+      <tr><td class="label">Cuartil Superior (Q3)</td><td class="value">${fmt(r.cuartilSuperior)}</td></tr>
+      <tr><td class="label">Rango Intercuartílico</td><td class="value">${fmt(r.rangoIntercuartilico)}</td></tr>
+      <tr><td class="label">1/6 Sextil</td><td class="value">${fmt(r.sextil1_6)}</td></tr>
+      <tr><td class="label">5/6 Sextil</td><td class="value">${fmt(r.sextil5_6)}</td></tr>
+      <tr><td class="label">Rango Intersextil</td><td class="value">${fmt(r.rangoIntersextil)}</td></tr>
+
+      <tr class="section-row"><td colspan="2">Forma de la distribución</td></tr>
+      <tr><td class="label">Sesgo</td><td class="value">${fmt(r.sesgo)}</td></tr>
+      <tr><td class="label">Sesgo Estandarizado</td><td class="value">${fmt(r.sesgoEstandarizado)}</td></tr>
+      <tr><td class="label">Curtosis</td><td class="value">${fmt(r.curtosis)}</td></tr>
+      <tr><td class="label">Curtosis Estandarizada</td><td class="value">${fmt(r.curtosisEstandarizada)}</td></tr>
+
+      <tr class="section-row"><td colspan="2">Sumas</td></tr>
+      <tr><td class="label">Suma</td><td class="value">${fmt(r.suma,2)}</td></tr>
+      <tr><td class="label">Suma de Cuadrados</td><td class="value">${fmt(r.sumaCuadrados,2)}</td></tr>
+    </table>
+    ${notaTrim}
+    <div class="chart-container"><canvas id="hist-chart"></canvas></div>
+    <div id="hpc-host"></div>
+  `;
+  renderHistograma(datos);
+  CodigoDescriptiva.montar(document.getElementById('hpc-host'), datos, r);
+}
+
+function renderHistograma(datos) {
+  if (chart) { chart.destroy(); chart = null; }
+  const ctx = document.getElementById('hist-chart');
+  if (!ctx) return;
+
+  const n = datos.length;
+  const min = Math.min(...datos);
+  const max = Math.max(...datos);
+  const numBins = Math.max(5, Math.min(12, Math.round(Math.sqrt(n))));
+  const ancho = (max - min) / numBins || 1;
+  const bins = Array.from({length: numBins}, (_, i) => ({
+    inicio: min + i * ancho,
+    fin: min + (i + 1) * ancho,
+    conteo: 0
+  }));
+  datos.forEach(x => {
+    let idx = Math.floor((x - min) / ancho);
+    if (idx >= numBins) idx = numBins - 1;
+    if (idx < 0) idx = 0;
+    bins[idx].conteo++;
+  });
+
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: bins.map(b => `${b.inicio.toFixed(1)}–${b.fin.toFixed(1)}`),
+      datasets: [{ label: 'Frecuencia', data: bins.map(b => b.conteo), backgroundColor: '#00d4ff88', borderColor: '#00d4ff', borderWidth: 1.5 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a2340', borderColor: '#2a3a5c', borderWidth: 1, titleColor: '#e8edf8', bodyColor: '#8a9bb8' } },
+      scales: {
+        x: { ticks: { color: '#4a5a78', font: { size: 9 } }, grid: { color: 'rgba(42,58,92,0.4)' }, title: { display: true, text: 'Intervalos', color: '#8a9bb8', font: { size: 10 } } },
+        y: { ticks: { color: '#4a5a78', font: { size: 9 }, precision: 0 }, grid: { color: 'rgba(42,58,92,0.4)' }, title: { display: true, text: 'Frecuencia', color: '#8a9bb8', font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function usarSugerencia(texto) {
+  document.getElementById('pregunta').value = texto;
+  preguntar();
+}
+
+function preguntar() {
+  if (!currentDatos || !currentResultados) return;
+  const contexto = document.getElementById('contexto')?.value || '';
+  const pregunta = document.getElementById('pregunta')?.value || '';
+
+  const payload = armarPayloadDescriptiva(currentDatos, currentResultados, contexto, pregunta);
+  const respuesta = generarRespuestaDescriptiva(payload);
+
+  const box = document.getElementById('respuesta-box');
+  box.textContent = respuesta;
+  box.classList.add('visible');
+
+  if (window.gtag) { gtag('event', 'pregunta_descriptiva', { herramienta: 'estadistica_descriptiva' }); }
+}
+</script>
+<article class="edu-pro" id="guia-educativa">
+<h2>¿Para qué sirve la estadística descriptiva?</h2>
+<h3>Resumir miles de datos en pocos números</h3>
+<p>Antes de aplicar cualquier prueba o modelo hay que <strong>conocer los datos</strong>. La estadística descriptiva los resume en medidas de <em>tendencia central</em> (media, mediana, moda), de <em>dispersión</em> (rango, varianza, desviación estándar, coeficiente de variación, rango intercuartílico) y de <em>forma</em> (asimetría y curtosis). Con ellas se sabe dónde se concentran los valores, cuánto se alejan entre sí y si la distribución es simétrica o está cargada hacia un lado.</p>
+<h3>Media o mediana: ¿cuál usar?</h3>
+<p>La <strong>media</strong> es el promedio aritmético y usa todos los datos, pero es sensible a valores extremos. La <strong>mediana</strong> es el valor central y resiste los atípicos. Si la media y la mediana son muy distintas, suele haber asimetría o valores extremos. Por ejemplo, en un conjunto de salarios con un ingreso muy alto, la mediana describe mejor al trabajador típico que la media.</p>
+<h3>Dispersión: el complemento indispensable</h3>
+<p>Dos grupos pueden tener el mismo promedio y comportarse muy distinto. La <strong>desviación estándar</strong> indica, en las mismas unidades de los datos, cuánto se alejan en promedio de la media. El <strong>coeficiente de variación</strong> (desviación ÷ media) permite comparar variabilidad entre variables con unidades o escalas distintas: valores superiores a 30 % suelen interpretarse como alta variabilidad relativa.</p>
+<h3>Cuartiles y valores atípicos</h3>
+<p>Los cuartiles dividen los datos ordenados en cuatro partes iguales. El <strong>rango intercuartílico</strong> (Q3 − Q1) mide la dispersión del 50 % central. Una regla común considera atípico cualquier dato que esté por debajo de Q1 − 1,5·IQR o por encima de Q3 + 1,5·IQR. Un atípico no siempre es un error: puede ser un caso real que merece revisión.</p>
+<h3>Cómo usar la herramienta</h3>
+<p>Pega tus datos separados por coma, espacio o salto de línea, o sube un archivo CSV o Excel. Presiona <em>Calcular</em> y revisa el resumen y los gráficos. Puedes describir el contexto de tus datos y hacer preguntas sobre el resultado, por ejemplo sobre dispersión, simetría o valores atípicos.</p>
+<div class="ejemplo"><h3 style="margin-top:.6rem">Ejemplo resuelto</h3><p>Datos: 12, 15, 18, 14, 20, 9, 16, 15, 22, 13 (n = 10). La <strong>media</strong> es 15,4 y la <strong>mediana</strong> 15; al ser casi iguales, la distribución es aproximadamente simétrica. La desviación estándar muestral es 3,84, por lo que el coeficiente de variación es de 24,9 %: variabilidad moderada. Los cuartiles son Q1 = 13,25 y Q3 = 17,5, con IQR = 4,25; ningún dato queda fuera de [6,9; 23,9], así que no hay atípicos. Pega esos números en la calculadora y compara.</p></div>
+<h3>Preguntas frecuentes</h3>
+<details><summary>¿Qué diferencia hay entre varianza y desviación estándar?</summary><p>La desviación estándar es la raíz cuadrada de la varianza. La varianza está en unidades al cuadrado, por eso la desviación estándar es más fácil de interpretar.</p></details>
+<details><summary>¿Cuándo se divide entre n y cuándo entre n − 1?</summary><p>Si los datos son una muestra y se quiere estimar la variabilidad de la población, se divide entre n − 1 (varianza muestral). Si son toda la población, se divide entre n.</p></details>
+<details><summary>¿Qué indica una asimetría positiva?</summary><p>Que la cola derecha de la distribución es más larga: hay unos pocos valores altos que jalan la media por encima de la mediana.</p></details>
+<details><summary>¿Cuántos datos necesito?</summary><p>Puedes calcular con pocos datos, pero con menos de 20 a 30 observaciones las medidas son poco estables y deben interpretarse con prudencia.</p></details>
+<p class="edu-meta" style="font-size:12.5px;color:#666;border-top:1px solid #e0e0dc;margin-top:1.2rem;padding-top:.7rem">Última revisión: noviembre de 2026. Conozca <a href="/metodologia/">cómo se construyen y revisan las herramientas</a>, las <a href="/fuentes/">fuentes de referencia</a> y la <a href="/politica-editorial/">política editorial</a>.</p>
+</article>
+
+<div class="hp-footer" role="contentinfo">
+  <strong>Estadilab</strong> — estadística interactiva y gratuita en español para estudiantes, docentes e investigadores.<br>
+  Proyecto independiente de Juan Carlos Gaviria Chaverra, docente ocasional de la Universidad de Antioquia.<br>
+  <a href="/">Inicio</a> · <a href="/acerca-de/">Acerca de</a> · <a href="/metodologia/">Metodología</a> · <a href="/fuentes/">Fuentes</a> · <a href="/politica-editorial/">Política editorial</a> · <a href="/contacto/">Contacto</a> · <a href="/privacidad/">Privacidad</a> · <a href="/terminos/">Términos</a>
+  <small>Herramientas de uso académico y orientativo; no reemplazan el criterio de un docente o de un estadístico. Última revisión del sitio: noviembre de 2026. Proyecto hermano de <a href="https://herramientaspro.com.co" rel="noopener">HerramientasPro Colombia</a>.</small>
+</div>
+</body>
+</html>

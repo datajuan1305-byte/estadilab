@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contacto | Estadilab</title>
+<meta name="description" content="Cómo contactar a Estadilab para reportar errores, sugerir herramientas o usar la plataforma en clase.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://estadilab.com/contacto/">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
+    --panel: #1a2340; --border: #2a3a5c;
+    --accent: #00d4ff; --accent2: #7b61ff;
+    --text: #e8edf8; --text2: #8a9bb8; --text3: #4a5a78;
+    --gold: #ffd700;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  header { position: relative; z-index: 10; padding: 1.6rem 2rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%); display: flex; align-items: center; gap: 1.2rem; }
+  .logo-icon { width: 50px; height: 50px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0; }
+  .header-text h1 { font-size: 1.5rem; font-weight: 700; }
+  .header-text p { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+  nav.breadcrumb { position: relative; z-index: 10; padding: 12px 2rem 0; font-size: 0.8rem; color: var(--text3); }
+  nav.breadcrumb a { color: var(--accent); text-decoration: none; }
+  main { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 1.8rem 2rem 4rem; }
+  .intro { font-size: 0.92rem; color: var(--text2); max-width: 720px; line-height: 1.6; margin-bottom: 2rem; }
+  .bloque { margin-bottom: 2.2rem; }
+  .bloque h2 { font-size: 1.05rem; color: var(--text); margin-bottom: 0.9rem; display: flex; align-items: center; gap: 0.5rem; }
+  .bloque h2 .tag { font-family: 'Space Mono', monospace; font-size: 0.62rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; background: var(--bg3); padding: 3px 8px; border-radius: 10px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; text-decoration: none; display: block; transition: border-color 0.15s, transform 0.15s; }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .card.disabled { opacity: 0.5; cursor: default; }
+  .card.disabled:hover { border-color: var(--border); transform: none; }
+  .card .icon { font-size: 1.6rem; margin-bottom: 0.6rem; display: block; }
+  .card h3 { font-size: 0.92rem; color: var(--text); margin-bottom: 0.3rem; }
+  .card p { font-size: 0.76rem; color: var(--text2); line-height: 1.5; }
+  .card .badge { display: inline-block; margin-top: 0.6rem; font-family: 'Space Mono', monospace; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 10px; }
+  .badge.activa { background: rgba(0,255,157,0.12); color: #00ff9d; }
+  .badge.proximamente { background: rgba(255,215,0,0.1); color: var(--gold); }
+  footer { position: relative; z-index: 1; text-align: center; padding: 1.5rem; font-size: 0.75rem; color: var(--text3); border-top: 1px solid var(--border); }
+  footer a { color: var(--text2); }
+</style>
+<style id="edu-pro-css">
+.edu-pro{position:relative;z-index:5;max-width:960px;margin:2.5rem auto 0;padding:1.8rem 2rem 3rem;color:var(--text2,#8a9bb8);line-height:1.75;font-size:.95rem;border-top:1px solid var(--border,#2a3a5c)}
+.edu-pro h2{color:var(--text,#e8edf8);font-size:1.35rem;margin:0 0 .8rem}
+.edu-pro h3{color:var(--accent,#00d4ff);font-size:1.02rem;margin:1.4rem 0 .4rem}
+.edu-pro p,.edu-pro ul{margin:0 0 .8rem}.edu-pro ul{padding-left:1.3rem}.edu-pro li{margin-bottom:.35rem}
+.edu-pro strong{color:var(--text,#e8edf8)}.edu-pro code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.85em}
+.edu-pro details{background:var(--panel,#1a2340);border:1px solid var(--border,#2a3a5c);border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem}
+.edu-pro summary{cursor:pointer;color:var(--text,#e8edf8);font-weight:600}.edu-pro details p{margin:.5rem 0 0}
+.edu-pro .ejemplo{background:rgba(0,212,255,.06);border-left:3px solid var(--accent,#00d4ff);padding:.2rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+@media(max-width:700px){.edu-pro{padding:1.4rem 1rem 2.5rem}}
+</style>
+<style id="hp-footer-css">
+.hp-footer{margin:2.5rem 0 0;padding:1.5rem 1rem 2rem;border-top:1px solid rgba(128,128,128,.35);text-align:center;font:13px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:inherit;opacity:.9}
+.hp-footer a{color:inherit;text-decoration:underline;margin:0 .35rem}
+.hp-footer small{display:block;margin-top:.4rem;opacity:.8;font-size:11.5px}
+</style>
+<style>.logo-icon{text-decoration:none;color:#0a0e1a;font-weight:700}header a.home{display:flex;align-items:center;gap:1rem;text-decoration:none;color:inherit}.card.soon{opacity:.55;cursor:default}.card.soon:hover{border-color:var(--border);transform:none}.badge.ia{background:rgba(123,97,255,.15);color:#b4a5ff}.doc{position:relative;z-index:1;max-width:820px;margin:0 auto;padding:1.5rem 1.4rem 3rem;color:var(--text2);line-height:1.75;font-size:.95rem}.doc h1{color:var(--text);font-size:1.6rem;margin:.4rem 0}.doc h2{color:var(--accent);font-size:1.1rem;margin:1.8rem 0 .5rem}.doc p,.doc ul{margin:0 0 .8rem}.doc ul{padding-left:1.3rem}.doc li{margin-bottom:.35rem}.doc strong{color:var(--text)}.doc a{color:var(--accent)}.doc .upd{font-size:.78rem;color:var(--text3)}.doc .note{background:rgba(0,212,255,.07);border-left:3px solid var(--accent);padding:.7rem 1rem;border-radius:0 8px 8px 0;margin:1rem 0}.doc table{width:100%;border-collapse:collapse;font-size:.85rem;margin:.6rem 0 1rem}.doc th,.doc td{border:1px solid var(--border);padding:7px 9px;text-align:left;vertical-align:top}.doc th{background:var(--bg3);color:var(--text)}.doc .tw{overflow-x:auto}@media(max-width:700px){header{padding:1.2rem 1rem}main{padding:1.4rem 1rem 3rem}nav.breadcrumb{padding:12px 1rem 0}}</style>
+</head>
+<body>
+<header>
+  <a class="home" href="/"><div class="logo-icon">𝜎</div>
+  <div class="header-text"><h1 style="font-size:1.5rem;font-weight:700">Estadilab</h1><p>Estadística interactiva en español</p></div></a>
+</header>
+<nav class="breadcrumb"><a href="/">Estadilab</a> › Contacto</nav>
+<div class="doc"><h1>Contacto</h1><p class="upd">Última actualización: noviembre de 2026</p>
+
+<h2>Escríbanos</h2>
+<p>Correo: <strong><a href="mailto:datajuan1305@gmail.com">datajuan1305@gmail.com</a></strong></p>
+<p>Indique la herramienta y el motivo de su mensaje. Los reportes de errores de cálculo se atienden con prioridad.</p>
+<h2>Qué puede enviar</h2>
+<ul><li><strong>Reportar un error:</strong> herramienta, datos ingresados, resultado obtenido y resultado esperado (con la fuente, si la tiene).</li><li><strong>Sugerir una herramienta o tema:</strong> por ejemplo, una prueba que necesite en sus cursos.</li><li><strong>Uso en clase o institucional:</strong> docentes y facultades que quieran usar Estadilab o recibir material de apoyo.</li><li><strong>Revisión académica:</strong> docentes e investigadores que quieran revisar una herramienta.</li></ul>
+<div class="note">Este contacto no ofrece asesoría estadística personalizada ni análisis de proyectos de investigación.</div>
+</div>
+<div class="hp-footer" role="contentinfo">
+  <strong>Estadilab</strong> — estadística interactiva y gratuita en español para estudiantes, docentes e investigadores.<br>
+  Proyecto independiente de Juan Carlos Gaviria Chaverra, docente ocasional de la Universidad de Antioquia.<br>
+  <a href="/">Inicio</a> · <a href="/acerca-de/">Acerca de</a> · <a href="/metodologia/">Metodología</a> · <a href="/fuentes/">Fuentes</a> · <a href="/politica-editorial/">Política editorial</a> · <a href="/contacto/">Contacto</a> · <a href="/privacidad/">Privacidad</a> · <a href="/terminos/">Términos</a>
+  <small>Herramientas de uso académico y orientativo; no reemplazan el criterio de un docente o de un estadístico. Última revisión del sitio: noviembre de 2026. Proyecto hermano de <a href="https://herramientaspro.com.co" rel="noopener">HerramientasPro Colombia</a>.</small>
+</div>
+</body>
+</html>

@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regresión Lineal | Estadilab</title>
+<meta name="description" content="Calculadora de regresión lineal simple y múltiple: coeficientes, R², R² ajustado, tabla ANOVA, pruebas de significancia y predicción. Gratis, sin registro.">
+<link rel="canonical" href="https://estadilab.com/regresion/">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
+    --panel: #1a2340; --border: #2a3a5c;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent4: #00ff9d; --accent3: #ff6b6b;
+    --text: #e8edf8; --text2: #8a9bb8; --text3: #4a5a78;
+    --gold: #ffd700;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  header { position: relative; z-index: 10; padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%); display: flex; align-items: center; gap: 1.2rem; }
+  .logo-icon { width: 46px; height: 46px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+  .header-text h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-text p { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+  nav.breadcrumb { position: relative; z-index: 10; padding: 10px 2rem 0; font-size: 0.78rem; color: var(--text3); }
+  nav.breadcrumb a { color: var(--accent); text-decoration: none; }
+
+  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 220px 1fr; grid-template-rows: auto 1fr; min-height: calc(100vh - 100px); }
+  .sidebar { grid-row: 1 / 3; border-right: 1px solid var(--border); background: var(--bg2); padding: 1.2rem 0.8rem; overflow-y: auto; }
+  .dist-btn { width: 100%; text-align: left; padding: 0.6rem 0.85rem; background: transparent; border: none; border-radius: 6px; color: var(--text2); font-size: 0.82rem; cursor: pointer; margin-bottom: 3px; }
+  .dist-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .dist-btn.active { background: rgba(0,212,255,0.12); color: var(--accent); font-weight: 600; }
+
+  .main-content { padding: 1.4rem 1.8rem; display: flex; flex-direction: column; gap: 1.2rem; }
+  .disclaimer { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); border-left: 3px solid var(--gold); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: #e8d98a; }
+
+  .prueba-header { padding: 1.1rem 1.3rem; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; }
+  .prueba-header h2 { font-size: 1.15rem; margin-bottom: 4px; }
+  .prueba-header .formula { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--accent); background: rgba(0,212,255,0.08); padding: 3px 10px; border-radius: 4px; display: inline-block; }
+
+  .calc-grid { display: grid; grid-template-columns: 380px 1fr; gap: 1.1rem; align-items: start; }
+  @media (max-width: 900px) { .calc-grid { grid-template-columns: 1fr; } .app { grid-template-columns: 1fr; } .sidebar { grid-row: auto; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.2rem; }
+  .panel h3 { font-size: 0.72rem; font-family: 'Space Mono', monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); margin-bottom: 1rem; }
+
+  .archivo-drop { display: block; border: 1.5px dashed var(--border); border-radius: 10px; padding: 0.7rem 0.9rem; text-align: center; cursor: pointer; margin-bottom: 0.7rem; }
+  .archivo-drop:hover { border-color: var(--accent); background: rgba(0,212,255,0.04); }
+  .archivo-drop strong { display: block; font-size: 0.78rem; color: var(--text); }
+  .archivo-drop span { font-size: 0.65rem; color: var(--text3); }
+  .archivo-info { font-size: 0.7rem; color: var(--accent4); margin: -0.3rem 0 0.6rem; display: none; }
+  .archivo-info.visible { display: block; }
+  .query-separator { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); text-align: center; margin: 0.6rem 0; }
+
+  .param-group { margin-bottom: 0.8rem; }
+  .param-group label { display: block; font-size: 0.76rem; color: var(--text2); margin-bottom: 0.35rem; }
+  .param-group input, .param-group textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.7rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.8rem; outline: none; }
+  .param-group input:focus, .param-group textarea:focus { border-color: var(--accent); }
+  .param-group textarea { min-height: 70px; resize: vertical; }
+
+  .fila-x { border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem; margin-bottom: 0.6rem; background: var(--bg3); }
+  .fila-x-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+  .fila-x-header span { font-size: 0.75rem; color: var(--text2); font-weight: 600; }
+  .btn-quitar-x { background: rgba(255,107,107,0.15); border: 1px solid rgba(255,107,107,0.3); color: var(--accent3); border-radius: 6px; padding: 3px 8px; cursor: pointer; font-size: 0.7rem; }
+  .btn-agregar { background: var(--bg3); border: 1px dashed var(--border); color: var(--text2); border-radius: 8px; padding: 0.5rem; width: 100%; cursor: pointer; font-size: 0.78rem; margin-bottom: 0.8rem; }
+  .btn-agregar:hover { border-color: var(--accent); color: var(--accent); }
+
+  .calc-btn { width: 100%; padding: 0.75rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: 0.4rem; }
+  .error-box { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.78rem; color: #ff4d6d; margin-top: 0.6rem; display: none; }
+
+  .ecuacion-box { background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.25); border-radius: 12px; padding: 1rem; text-align: center; margin-bottom: 1rem; font-family: 'Space Mono', monospace; font-size: 1.1rem; color: var(--accent4); }
+
+  .resultado-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-bottom: 1rem; }
+  .resultado-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem; text-align: center; }
+  .resultado-card .lbl { font-size: 0.6rem; font-family: 'Space Mono', monospace; color: var(--text3); text-transform: uppercase; margin-bottom: 0.35rem; }
+  .resultado-card .val { font-family: 'Space Mono', monospace; font-size: 1.05rem; font-weight: 700; color: var(--accent); }
+
+  table.tabla-reg { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-bottom: 1rem; }
+  table.tabla-reg th { font-size: 0.62rem; text-transform: uppercase; color: var(--text3); padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+  table.tabla-reg td { padding: 6px 8px; border-bottom: 1px solid rgba(42,58,92,0.5); font-family: 'Space Mono', monospace; }
+  table.tabla-reg tr.sig td:last-child { color: var(--accent4); font-weight: 600; }
+  table.tabla-reg tr.no-sig td:last-child { color: var(--text3); }
+
+  .chart-container { position: relative; height: 260px; margin-bottom: 1rem; }
+  .conclusion-text { font-size: 0.85rem; color: var(--text2); line-height: 1.6; }
+  .sin-resultado { text-align: center; color: var(--text3); font-size: 0.85rem; padding: 2rem; }
+
+  .prediccion-box { display: flex; gap: 0.6rem; align-items: end; margin-top: 1rem; }
+  .prediccion-box .param-group { flex: 1; margin-bottom: 0; }
+  .prediccion-box button { width: auto; padding: 0.5rem 1rem; white-space: nowrap; }
+
+  .context-panel { grid-column: 1 / -1; }
+  .context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 900px) { .context-grid { grid-template-columns: 1fr; } }
+  .pregunta-row { display: flex; gap: 0.6rem; margin-top: 0.6rem; }
+  .pregunta-row input { flex: 1; }
+  .pregunta-row button { width: auto; padding: 0.55rem 1.1rem; white-space: nowrap; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; }
+  .sugerencias { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .sugerencia-chip { font-size: 0.7rem; padding: 0.3rem 0.65rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; color: var(--text2); cursor: pointer; }
+  .sugerencia-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .respuesta-box { margin-top: 0.9rem; background: var(--bg3); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 8px; padding: 0.9rem 1rem; font-size: 0.85rem; color: var(--text); line-height: 1.6; display: none; }
+  .respuesta-box.visible { display: block; }
+  .ia-note { font-size: 0.68rem; color: var(--text3); margin-top: 0.5rem; font-style: italic; }
+
+  .welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; text-align: center; gap: 0.8rem; }
+  .welcome .welcome-icon { font-size: 3rem; opacity: 0.5; }
+  .welcome h2 { font-size: 1.3rem; color: var(--text2); font-weight: 400; }
+  .welcome p { font-size: 13.5px; color: var(--text3); max-width: 420px; }
+</style>
+<style id="edu-pro-css">
+.edu-pro{position:relative;z-index:5;max-width:960px;margin:2.5rem auto 0;padding:1.8rem 2rem 3rem;color:var(--text2,#8a9bb8);line-height:1.75;font-size:.95rem;border-top:1px solid var(--border,#2a3a5c)}
+.edu-pro h2{color:var(--text,#e8edf8);font-size:1.35rem;margin:0 0 .8rem}
+.edu-pro h3{color:var(--accent,#00d4ff);font-size:1.02rem;margin:1.4rem 0 .4rem}
+.edu-pro p,.edu-pro ul{margin:0 0 .8rem}.edu-pro ul{padding-left:1.3rem}.edu-pro li{margin-bottom:.35rem}
+.edu-pro strong{color:var(--text,#e8edf8)}.edu-pro code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.85em}
+.edu-pro details{background:var(--panel,#1a2340);border:1px solid var(--border,#2a3a5c);border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem}
+.edu-pro summary{cursor:pointer;color:var(--text,#e8edf8);font-weight:600}.edu-pro details p{margin:.5rem 0 0}
+.edu-pro .ejemplo{background:rgba(0,212,255,.06);border-left:3px solid var(--accent,#00d4ff);padding:.2rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+@media(max-width:700px){.edu-pro{padding:1.4rem 1rem 2.5rem}}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Qué significa R² = 0,80?", "acceptedAnswer": {"@type": "Answer", "text": "Que el modelo explica aproximadamente el 80 % de la variabilidad de la respuesta en la muestra."}}, {"@type": "Question", "name": "¿Cuándo usar regresión múltiple?", "acceptedAnswer": {"@type": "Answer", "text": "Cuando varias variables pueden influir en la respuesta y quieres estimar el efecto de cada una controlando las demás."}}, {"@type": "Question", "name": "¿Qué indica un coeficiente con valor p alto?", "acceptedAnswer": {"@type": "Answer", "text": "Que no hay evidencia suficiente de que esa variable aporte al modelo, dado el resto."}}, {"@type": "Question", "name": "¿Puedo usar variables categóricas?", "acceptedAnswer": {"@type": "Answer", "text": "Sí, codificándolas como variables indicadoras (0/1)."}}]}</script>
+<style id="hp-footer-css">
+.hp-footer{margin:2.5rem 0 0;padding:1.5rem 1rem 2rem;border-top:1px solid rgba(128,128,128,.35);text-align:center;font:13px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:inherit;opacity:.9}
+.hp-footer a{color:inherit;text-decoration:underline;margin:0 .35rem}
+.hp-footer small{display:block;margin-top:.4rem;opacity:.8;font-size:11.5px}
+</style>
+<style id="hp-mobile-fix">
+/* Móvil: evita que tablas y resultados ensanchen la página (min-width:auto de los ítems de grid) */
+@media (max-width: 900px){.app>*,.layout>*,.main-content,.calc-grid>*,.panel{min-width:0;max-width:100%}.panel table,.main-content table{display:block;overflow-x:auto;max-width:100%}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">ŷ</div>
+  <div class="header-text">
+    <h1>Regresión Lineal</h1>
+    <p>Estadilab · Piloto académico</p>
+  </div>
+</header>
+
+<nav class="breadcrumb"><a href="/">Estadilab</a> › Regresión Lineal</nav>
+
+<div class="app">
+  <aside class="sidebar">
+    <button class="dist-btn" onclick="loadModuloR('simple', this)">Regresión simple</button>
+    <button class="dist-btn" onclick="loadModuloR('multiple', this)">Regresión múltiple</button>
+  </aside>
+
+  <main class="main-content" id="main-content">
+    <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-icon">📈</div>
+      <h2>Selecciona un tipo de regresión</h2>
+      <p>Regresión simple (una variable predictora) o múltiple (dos o más), con tabla ANOVA, coeficientes y predicción.</p>
+    </div>
+  </main>
+</div>
+
+<script src="js/motor-regresion.js"></script>
+<script src="js/interpretacion-regresion.js"></script>
+<script src="../js/hp-codigo.js"></script>
+<script src="js/codigo-regresion.js"></script>
+<script>
+let currentModuloR = null;
+let currentResultadoR = null;
+let chartR = null;
+let numVariablesX = 2;
+
+function loadModuloR(id, btn) {
+  currentModuloR = id;
+  document.querySelectorAll('.dist-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const main = document.getElementById('main-content');
+
+  const bodyHTML = id === 'simple' ? renderSimple() : renderMultiple();
+
+  main.innerHTML = `
+    <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+    ${bodyHTML}
+    <div class="context-panel panel">
+      <h3>💬 Contexto de tu análisis y preguntas</h3>
+      <div class="context-grid">
+        <div class="param-group">
+          <label>Describe qué representan tus variables (opcional)</label>
+          <textarea id="contexto" rows="3" placeholder="Ej: X = inversión en publicidad, Y = ventas mensuales."></textarea>
+        </div>
+        <div class="param-group">
+          <label>Pregunta sobre el resultado</label>
+          <div class="pregunta-row">
+            <input type="text" id="pregunta" placeholder="Ej: ¿qué significa el R²?">
+            <button onclick="preguntarR()">Preguntar</button>
+          </div>
+          <div class="sugerencias">
+            <span class="sugerencia-chip" onclick="usarSugerenciaR('¿qué significa el R²?')">R²</span>
+            <span class="sugerencia-chip" onclick="usarSugerenciaR('¿es significativo el modelo?')">Significancia global</span>
+            <span class="sugerencia-chip" onclick="usarSugerenciaR('¿son significativos los coeficientes?')">Coeficientes</span>
+            <span class="sugerencia-chip" onclick="usarSugerenciaR('¿qué supuestos tiene la regresión?')">Supuestos</span>
+          </div>
+        </div>
+      </div>
+      <div class="respuesta-box" id="respuesta-box"></div>
+      <div class="ia-note">Hoy esta respuesta se genera con reglas locales, sin costo. En una fase futura se podrá conectar a IA para preguntas más abiertas.</div>
+    </div>
+  `;
+
+  if (id === 'multiple') { numVariablesX = 2; renderFilasX(); }
+}
+
+// ═══ REGRESIÓN SIMPLE ═══
+function renderSimple() {
+  return `
+    <div class="prueba-header">
+      <h2>Regresión lineal simple</h2>
+      <span class="formula">ŷ = b₀ + b₁·x</span>
+    </div>
+    <div class="calc-grid">
+      <div class="panel">
+        <h3>Datos pareados (X, Y)</h3>
+        <label class="archivo-drop" for="archivo-input">
+          📂 <strong>Subir CSV o Excel</strong>
+          <span>Columna 1 = X, columna 2 = Y</span>
+        </label>
+        <input type="file" id="archivo-input" accept=".csv,.txt,.xlsx,.xls" onchange="handleArchivoSimple(event)" style="display:none;">
+        <div id="archivo-info" class="archivo-info"></div>
+        <div class="query-separator">o pega los datos</div>
+        <div class="param-group"><label>Variable X (predictora)</label><textarea id="datos-x" placeholder="Ej: 10, 8, 13, 9, 11, 14, 6, 4, 12, 7, 5"></textarea></div>
+        <div class="param-group"><label>Variable Y (respuesta)</label><textarea id="datos-y" placeholder="Ej: 8.04, 6.95, 7.58, 8.81, 8.33, 9.96, 7.24, 4.26, 10.84, 4.82, 5.68"></textarea></div>
+        <button class="calc-btn" onclick="calcularSimple()">Calcular regresión</button>
+        <div class="error-box" id="error-box"></div>
+      </div>
+      <div class="panel" id="resultados-panel">
+        <div class="sin-resultado">Ingresa tus datos y presiona <strong style="color:var(--text)">Calcular regresión</strong></div>
+      </div>
+    </div>
+  `;
+}
+
+function handleArchivoSimple(event) {
+  leerArchivoXY(event, (colX, colY, nombre) => {
+    document.getElementById('datos-x').value = colX.join(', ');
+    document.getElementById('datos-y').value = colY.join(', ');
+    mostrarInfoArchivo(`✓ ${colX.length} pares (X,Y) cargados desde "${nombre}".`);
+  });
+}
+
+function calcularSimple() {
+  const errBox = document.getElementById('error-box');
+  const x = parsearListaNum(document.getElementById('datos-x').value);
+  const y = parsearListaNum(document.getElementById('datos-y').value);
+  if (!x || !y || x.length !== y.length || x.length < 3) {
+    errBox.textContent = '⚠ Revisa que X e Y tengan la misma cantidad de valores numéricos válidos (mínimo 3 pares).';
+    errBox.style.display = 'block';
+    return;
+  }
+  errBox.style.display = 'none';
+
+  const r = regresionSimple(x, y);
+  currentResultadoR = r;
+
+  const panel = document.getElementById('resultados-panel');
+  panel.innerHTML = `
+    <h3>Resultado</h3>
+    <div class="ecuacion-box">${generarEcuacion('simple', r)}</div>
+    <div class="resultado-grid">
+      <div class="resultado-card"><div class="lbl">R²</div><div class="val">${r.r2.toFixed(4)}</div></div>
+      <div class="resultado-card"><div class="lbl">r</div><div class="val">${r.r.toFixed(4)}</div></div>
+      <div class="resultado-card"><div class="lbl">Error estándar (Se)</div><div class="val">${r.se.toFixed(4)}</div></div>
+    </div>
+    <table class="tabla-reg">
+      <thead><tr><th>Fuente</th><th>SC</th><th>gl</th><th>CM</th><th>F</th><th>p</th></tr></thead>
+      <tbody>
+        <tr><td>Regresión</td><td>${r.anova.ssr.toFixed(3)}</td><td>${r.anova.dfR}</td><td>${r.anova.msr.toFixed(3)}</td><td>${r.anova.f.toFixed(3)}</td><td>${r.anova.pF.toFixed(6)}</td></tr>
+        <tr><td>Residual</td><td>${r.anova.sse.toFixed(3)}</td><td>${r.anova.dfE}</td><td>${r.anova.mse.toFixed(3)}</td><td></td><td></td></tr>
+        <tr><td>Total</td><td>${r.anova.sst.toFixed(3)}</td><td>${r.anova.dfR + r.anova.dfE}</td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+    <table class="tabla-reg">
+      <thead><tr><th>Coeficiente</th><th>Valor</th><th>Error Est.</th><th>t</th><th>p</th></tr></thead>
+      <tbody>
+        <tr class="${r.pB0 < 0.05 ? 'sig' : 'no-sig'}"><td>b₀ (intercepto)</td><td>${r.b0.toFixed(4)}</td><td>${r.seB0.toFixed(4)}</td><td>${r.tB0.toFixed(3)}</td><td>${r.pB0.toFixed(4)}</td></tr>
+        <tr class="${r.pB1 < 0.05 ? 'sig' : 'no-sig'}"><td>b₁ (pendiente)</td><td>${r.b1.toFixed(4)}</td><td>${r.seB1.toFixed(4)}</td><td>${r.tB1.toFixed(3)}</td><td>${r.pB1.toFixed(4)}</td></tr>
+      </tbody>
+    </table>
+    <div class="chart-container"><canvas id="reg-chart"></canvas></div>
+    <div class="prediccion-box">
+      <div class="param-group"><label>Predecir Y para x =</label><input type="number" id="pred-x" value="${x[0]}" step="any"></div>
+      <button class="calc-btn" onclick="predecirSimple()">Predecir</button>
+    </div>
+    <div id="prediccion-resultado" style="margin-top:0.6rem;font-family:'Space Mono',monospace;color:var(--accent4);"></div>
+    <div class="conclusion-text" style="margin-top:1rem;">${generarResumenReg(armarPayloadReg('simple', {}, r, '', ''))}</div>
+    <div id="hpc-host"></div>
+  `;
+  CodigoRegresion.montar(document.getElementById('hpc-host'), 'simple', { x, y }, r);
+  renderChartSimple(x, y, r);
+  const rb = document.getElementById('respuesta-box'); if (rb) rb.classList.remove('visible');
+}
+
+function predecirSimple() {
+  const xVal = parseFloat(document.getElementById('pred-x').value);
+  if (isNaN(xVal) || !currentResultadoR) return;
+  document.getElementById('prediccion-resultado').textContent = `ŷ(${xVal}) = ${currentResultadoR.predict(xVal).toFixed(4)}`;
+}
+
+function renderChartSimple(x, y, r) {
+  if (chartR) { chartR.destroy(); chartR = null; }
+  const ctx = document.getElementById('reg-chart');
+  if (!ctx) return;
+  const puntos = x.map((xi, i) => ({ x: xi, y: y[i] }));
+  const xMin = Math.min(...x), xMax = Math.max(...x);
+  const lineaRecta = [{ x: xMin, y: r.predict(xMin) }, { x: xMax, y: r.predict(xMax) }];
+
+  chartR = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { label: 'Datos', data: puntos, backgroundColor: '#00d4ffcc', pointRadius: 5, showLine: false },
+        { label: 'Recta ajustada', data: lineaRecta, type: 'line', borderColor: '#ff6b6b', borderWidth: 2, pointRadius: 0, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8a9bb8', font: { size: 10 } } }, tooltip: { backgroundColor: '#1a2340', borderColor: '#2a3a5c', borderWidth: 1, titleColor: '#e8edf8', bodyColor: '#8a9bb8' } },
+      scales: {
+        x: { title: { display: true, text: 'X', color: '#8a9bb8' }, ticks: { color: '#4a5a78', font: { size: 9 } }, grid: { color: 'rgba(42,58,92,0.4)' } },
+        y: { title: { display: true, text: 'Y', color: '#8a9bb8' }, ticks: { color: '#4a5a78', font: { size: 9 } }, grid: { color: 'rgba(42,58,92,0.4)' } }
+      }
+    }
+  });
+}
+
+// ═══ REGRESIÓN MÚLTIPLE ═══
+function renderMultiple() {
+  return `
+    <div class="prueba-header">
+      <h2>Regresión lineal múltiple</h2>
+      <span class="formula">ŷ = b₀ + b₁X₁ + b₂X₂ + ... + bₖXₖ</span>
+    </div>
+    <div class="calc-grid">
+      <div class="panel">
+        <h3>Datos</h3>
+        <label class="archivo-drop" for="archivo-input-m">
+          📂 <strong>Subir CSV o Excel</strong>
+          <span>Columna 1 = Y, columnas siguientes = X1, X2, ...</span>
+        </label>
+        <input type="file" id="archivo-input-m" accept=".csv,.txt,.xlsx,.xls" onchange="handleArchivoMultiple(event)" style="display:none;">
+        <div id="archivo-info" class="archivo-info"></div>
+        <div class="query-separator">o pega los datos por variable</div>
+        <div class="param-group"><label>Variable Y (respuesta)</label><textarea id="datos-y-m" placeholder="Ej: 15, 22, 28, 35, 41"></textarea></div>
+        <div id="filas-x"></div>
+        <button class="btn-agregar" onclick="agregarVariableX()">+ Agregar otra variable predictora (X)</button>
+        <button class="calc-btn" onclick="calcularMultiple()">Calcular regresión</button>
+        <div class="error-box" id="error-box"></div>
+      </div>
+      <div class="panel" id="resultados-panel">
+        <div class="sin-resultado">Ingresa tus datos y presiona <strong style="color:var(--text)">Calcular regresión</strong></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderFilasX() {
+  const cont = document.getElementById('filas-x');
+  if (!cont) return;
+  let html = '';
+  for (let i = 0; i < numVariablesX; i++) {
+    html += `
+      <div class="fila-x" data-idx="${i}">
+        <div class="fila-x-header">
+          <span>Variable X${i + 1}</span>
+          ${numVariablesX > 1 ? `<button class="btn-quitar-x" onclick="quitarVariableX(${i})">✕ Quitar</button>` : ''}
+        </div>
+        <textarea id="datos-x${i}-m" placeholder="Valores de X${i + 1}, separados por coma"></textarea>
+      </div>
+    `;
+  }
+  cont.innerHTML = html;
+}
+
+function agregarVariableX() { numVariablesX++; renderFilasX(); }
+function quitarVariableX(idx) { numVariablesX--; renderFilasX(); }
+
+function handleArchivoMultiple(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const nombre = file.name.toLowerCase();
+
+  const procesarFilas = (filas) => {
+    const filasValidas = filas.filter(f => f && f.length >= 2 && f.every(v => v !== '' && v !== null && !isNaN(parseFloat(v))));
+    if (filasValidas.length === 0) { mostrarErrorArchivoR('No se encontraron filas numéricas completas.'); return; }
+    const numCols = filasValidas[0].length;
+    const colY = filasValidas.map(f => parseFloat(f[0]));
+    numVariablesX = numCols - 1;
+    renderFilasX();
+    document.getElementById('datos-y-m').value = colY.join(', ');
+    for (let j = 0; j < numVariablesX; j++) {
+      const colXj = filasValidas.map(f => parseFloat(f[j + 1]));
+      document.getElementById(`datos-x${j}-m`).value = colXj.join(', ');
+    }
+    mostrarInfoArchivo(`✓ ${filasValidas.length} filas y ${numVariablesX} variable(s) predictora(s) cargadas desde "${file.name}".`);
+  };
+
+  if (nombre.endsWith('.csv') || nombre.endsWith('.txt')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const lineas = e.target.result.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      const filas = lineas.map(l => l.split(/[,;\t]+/).map(s => s.trim()));
+      procesarFilas(filas);
+    };
+    reader.readAsText(file);
+  } else if (nombre.endsWith('.xlsx') || nombre.endsWith('.xls')) {
+    if (typeof XLSX === 'undefined') { mostrarErrorArchivoR('No se pudo cargar el lector de Excel.'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const filas = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        procesarFilas(filas);
+      } catch (err) {
+        mostrarErrorArchivoR('No se pudo leer el archivo Excel.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    mostrarErrorArchivoR('Formato no soportado. Sube un archivo .csv, .xlsx o .xls.');
+  }
+}
+
+function calcularMultiple() {
+  const errBox = document.getElementById('error-box');
+  const y = parsearListaNum(document.getElementById('datos-y-m').value);
+  if (!y) { errBox.textContent = '⚠ Revisa los valores de Y.'; errBox.style.display = 'block'; return; }
+
+  const columnasX = [];
+  for (let i = 0; i < numVariablesX; i++) {
+    const col = parsearListaNum(document.getElementById(`datos-x${i}-m`).value);
+    if (!col || col.length !== y.length) {
+      errBox.textContent = `⚠ La variable X${i + 1} debe tener la misma cantidad de datos que Y (${y.length}).`;
+      errBox.style.display = 'block';
+      return;
+    }
+    columnasX.push(col);
+  }
+  if (y.length < numVariablesX + 2) {
+    errBox.textContent = `⚠ Necesitas al menos ${numVariablesX + 2} observaciones para ${numVariablesX} variable(s) predictora(s).`;
+    errBox.style.display = 'block';
+    return;
+  }
+  errBox.style.display = 'none';
+
+  const Xmat = y.map((_, i) => columnasX.map(col => col[i]));
+
+  let r;
+  try {
+    r = regresionMultiple(y, Xmat);
+  } catch (e) {
+    errBox.textContent = '⚠ ' + e.message;
+    errBox.style.display = 'block';
+    return;
+  }
+  currentResultadoR = r;
+
+  const panel = document.getElementById('resultados-panel');
+  const filasCoef = r.coeficientes.map(c => `<tr class="${c.p < 0.05 ? 'sig' : 'no-sig'}"><td>${c.nombre}</td><td>${c.valor.toFixed(4)}</td><td>${c.se.toFixed(4)}</td><td>${c.t.toFixed(3)}</td><td>${c.p.toFixed(4)}</td></tr>`).join('');
+
+  panel.innerHTML = `
+    <h3>Resultado</h3>
+    <div class="ecuacion-box">${generarEcuacion('multiple', r)}</div>
+    <div class="resultado-grid">
+      <div class="resultado-card"><div class="lbl">R²</div><div class="val">${r.r2.toFixed(4)}</div></div>
+      <div class="resultado-card"><div class="lbl">R² Ajustado</div><div class="val">${r.r2Ajustado.toFixed(4)}</div></div>
+      <div class="resultado-card"><div class="lbl">Error estándar</div><div class="val">${r.se.toFixed(4)}</div></div>
+    </div>
+    <table class="tabla-reg">
+      <thead><tr><th>Fuente</th><th>SC</th><th>gl</th><th>CM</th><th>F</th><th>p</th></tr></thead>
+      <tbody>
+        <tr><td>Regresión</td><td>${r.anova.ssr.toFixed(3)}</td><td>${r.anova.dfR}</td><td>${r.anova.msr.toFixed(3)}</td><td>${r.anova.f.toFixed(3)}</td><td>${r.anova.pF.toFixed(6)}</td></tr>
+        <tr><td>Residual</td><td>${r.anova.sse.toFixed(3)}</td><td>${r.anova.dfE}</td><td>${r.anova.mse.toFixed(3)}</td><td></td><td></td></tr>
+        <tr><td>Total</td><td>${r.anova.sst.toFixed(3)}</td><td>${r.anova.dfR + r.anova.dfE}</td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+    <table class="tabla-reg">
+      <thead><tr><th>Coeficiente</th><th>Valor</th><th>Error Est.</th><th>t</th><th>p</th></tr></thead>
+      <tbody>${filasCoef}</tbody>
+    </table>
+    <div class="prediccion-box" style="flex-wrap:wrap;">
+      ${columnasX.map((_, j) => `<div class="param-group"><label>X${j+1} =</label><input type="number" id="pred-x${j}-m" value="${Xmat[0][j]}" step="any"></div>`).join('')}
+      <button class="calc-btn" onclick="predecirMultiple(${numVariablesX})">Predecir</button>
+    </div>
+    <div id="prediccion-resultado" style="margin-top:0.6rem;font-family:'Space Mono',monospace;color:var(--accent4);"></div>
+    <div class="conclusion-text" style="margin-top:1rem;">${generarResumenReg(armarPayloadReg('multiple', {}, r, '', ''))}</div>
+    <div id="hpc-host"></div>
+  `;
+  CodigoRegresion.montar(document.getElementById('hpc-host'), 'multiple', { X: columnasX, y }, r);
+  const rb = document.getElementById('respuesta-box'); if (rb) rb.classList.remove('visible');
+}
+
+function predecirMultiple(k) {
+  const xVals = [];
+  for (let j = 0; j < k; j++) {
+    const v = parseFloat(document.getElementById(`pred-x${j}-m`).value);
+    if (isNaN(v)) return;
+    xVals.push(v);
+  }
+  if (!currentResultadoR) return;
+  document.getElementById('prediccion-resultado').textContent = `ŷ = ${currentResultadoR.predict(xVals).toFixed(4)}`;
+}
+
+// ═══ UTILIDADES DE ARCHIVO COMPARTIDAS ═══
+function mostrarErrorArchivoR(msg) {
+  const errBox = document.getElementById('error-box');
+  errBox.textContent = '⚠ ' + msg;
+  errBox.style.display = 'block';
+}
+
+function mostrarInfoArchivo(msg) {
+  const info = document.getElementById('archivo-info');
+  info.textContent = msg;
+  info.classList.add('visible');
+  document.getElementById('error-box').style.display = 'none';
+}
+
+function leerArchivoXY(event, callback) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const nombre = file.name.toLowerCase();
+
+  if (nombre.endsWith('.csv') || nombre.endsWith('.txt')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const lineas = e.target.result.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      const colX = [], colY = [];
+      lineas.forEach(linea => {
+        const partes = linea.split(/[,;\t]+/).map(s => s.trim());
+        if (partes.length >= 2) {
+          const nx = parseFloat(partes[0].replace(',', '.'));
+          const ny = parseFloat(partes[1].replace(',', '.'));
+          if (!isNaN(nx) && !isNaN(ny)) { colX.push(nx); colY.push(ny); }
+        }
+      });
+      callback(colX, colY, file.name);
+    };
+    reader.readAsText(file);
+  } else if (nombre.endsWith('.xlsx') || nombre.endsWith('.xls')) {
+    if (typeof XLSX === 'undefined') { mostrarErrorArchivoR('No se pudo cargar el lector de Excel.'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const filas = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const colX = [], colY = [];
+        filas.forEach(fila => {
+          if (!fila || fila.length < 2) return;
+          const nx = typeof fila[0] === 'number' ? fila[0] : parseFloat(String(fila[0]).replace(',', '.'));
+          const ny = typeof fila[1] === 'number' ? fila[1] : parseFloat(String(fila[1]).replace(',', '.'));
+          if (!isNaN(nx) && !isNaN(ny) && isFinite(nx) && isFinite(ny)) { colX.push(nx); colY.push(ny); }
+        });
+        callback(colX, colY, file.name);
+      } catch (err) {
+        mostrarErrorArchivoR('No se pudo leer el archivo Excel.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    mostrarErrorArchivoR('Formato no soportado. Sube un archivo .csv, .xlsx o .xls.');
+  }
+}
+
+// ═══ CONTEXTO / PREGUNTAS ═══
+function usarSugerenciaR(texto) {
+  document.getElementById('pregunta').value = texto;
+  preguntarR();
+}
+
+function preguntarR() {
+  if (!currentResultadoR) return;
+  const contexto = document.getElementById('contexto')?.value || '';
+  const pregunta = document.getElementById('pregunta')?.value || '';
+  const payload = armarPayloadReg(currentModuloR, {}, currentResultadoR, contexto, pregunta);
+  const respuesta = generarRespuestaReg(payload);
+  const box = document.getElementById('respuesta-box');
+  box.textContent = respuesta;
+  box.classList.add('visible');
+  if (window.gtag) { gtag('event', 'pregunta_regresion', { herramienta: 'regresion' }); }
+}
+</script>
+<article class="edu-pro" id="guia-educativa">
+<h2>Regresión lineal: modelar y predecir</h2>
+<h3>¿Qué hace la regresión lineal?</h3>
+<p>Ajusta una recta (o un plano, en regresión múltiple) que relaciona una variable respuesta Y con una o más variables explicativas X. Permite <strong>cuantificar el efecto</strong> de cada variable (coeficientes), <strong>predecir</strong> valores de Y y evaluar qué tan bien el modelo explica los datos.</p>
+<h3>Cómo leer los resultados</h3>
+<ul><li><strong>Coeficientes:</strong> cambio esperado en Y por cada unidad de X, manteniendo las demás constantes.</li><li><strong>R² y R² ajustado:</strong> proporción de variabilidad explicada; el ajustado penaliza variables innecesarias.</li><li><strong>Prueba t de cada coeficiente:</strong> evalúa si su efecto es distinto de cero.</li><li><strong>Prueba F global:</strong> evalúa si el modelo en conjunto explica algo.</li></ul>
+<h3>Supuestos y diagnóstico</h3>
+<p>El modelo asume relación lineal, errores independientes, varianza constante (homocedasticidad) y residuos aproximadamente normales. Revisar los gráficos de residuos ayuda a detectar curvatura, heterocedasticidad y puntos influyentes. En regresión múltiple, la <strong>multicolinealidad</strong> (variables explicativas muy correlacionadas) vuelve inestables los coeficientes.</p>
+<h3>Precauciones</h3>
+<p>Un R² alto no garantiza un buen modelo, y extrapolar fuera del rango de los datos es riesgoso. Recuerda también que asociación no implica causalidad.</p>
+<div class="ejemplo"><h3 style="margin-top:.6rem">Ejemplo resuelto</h3><p>Con los mismos datos, X = (1, 2, 3, 4, 5) y Y = (2, 4, 5, 4, 5), la recta ajustada es Ŷ = 2,2 + 0,6·X: por cada unidad que aumenta X, Y aumenta en promedio 0,6. El R² es 0,60 y el error estándar de la pendiente es 0,283 (t = 2,12, valor p = 0,124). Para X = 6 el modelo predice 5,8, pero eso extrapola fuera del rango observado (1 a 5), por lo que debe tomarse con cautela.</p></div>
+<h3>Errores frecuentes y buenas prácticas</h3>
+<ul><li><strong>No extrapole.</strong> La recta solo es confiable dentro del rango de datos observados; fuera de él, la predicción es una conjetura.</li><li><strong>Revise los residuos.</strong> Si muestran un patrón (curva, abanico), el modelo lineal no es adecuado o falta una variable.</li><li><strong>R² alto no basta.</strong> Un R² elevado no prueba causalidad ni garantiza buenas predicciones.</li><li><strong>Puntos influyentes.</strong> Un solo dato extremo puede inclinar la recta; compruebe qué pasa al quitarlo.</li><li><strong>Unidades y significado.</strong> Interprete la pendiente en las unidades del problema: "por cada unidad adicional de X, Y cambia en promedio…".</li></ul>
+<h3>Cómo reportar un modelo de regresión</h3>
+<p>Un reporte claro incluye la ecuación estimada con las unidades, el R², el error estándar de la estimación, la significancia de la pendiente y el tamaño de muestra. Por ejemplo: "Por cada hora adicional de estudio, la calificación aumenta en promedio 0,45 puntos (IC 95 % [0,20; 0,70]; R² = 0,38; n = 30)". Añada el gráfico con la recta ajustada y los residuos, y aclare el rango de X en el que el modelo es válido. Si usa el modelo para predecir, distinga entre el intervalo de confianza de la media y el intervalo de predicción de un valor individual, que es más ancho.</p>
+<h3>Preguntas frecuentes</h3>
+<details><summary>¿Qué significa R² = 0,80?</summary><p>Que el modelo explica aproximadamente el 80 % de la variabilidad de la respuesta en la muestra.</p></details>
+<details><summary>¿Cuándo usar regresión múltiple?</summary><p>Cuando varias variables pueden influir en la respuesta y quieres estimar el efecto de cada una controlando las demás.</p></details>
+<details><summary>¿Qué indica un coeficiente con valor p alto?</summary><p>Que no hay evidencia suficiente de que esa variable aporte al modelo, dado el resto.</p></details>
+<details><summary>¿Puedo usar variables categóricas?</summary><p>Sí, codificándolas como variables indicadoras (0/1).</p></details>
+<p class="edu-meta" style="font-size:12.5px;color:#666;border-top:1px solid #e0e0dc;margin-top:1.2rem;padding-top:.7rem">Última revisión: noviembre de 2026. Conozca <a href="/metodologia/">cómo se construyen y revisan las herramientas</a>, las <a href="/fuentes/">fuentes de referencia</a> y la <a href="/politica-editorial/">política editorial</a>.</p>
+</article>
+
+<div class="hp-footer" role="contentinfo">
+  <strong>Estadilab</strong> — estadística interactiva y gratuita en español para estudiantes, docentes e investigadores.<br>
+  Proyecto independiente de Juan Carlos Gaviria Chaverra, docente ocasional de la Universidad de Antioquia.<br>
+  <a href="/">Inicio</a> · <a href="/acerca-de/">Acerca de</a> · <a href="/metodologia/">Metodología</a> · <a href="/fuentes/">Fuentes</a> · <a href="/politica-editorial/">Política editorial</a> · <a href="/contacto/">Contacto</a> · <a href="/privacidad/">Privacidad</a> · <a href="/terminos/">Términos</a>
+  <small>Herramientas de uso académico y orientativo; no reemplazan el criterio de un docente o de un estadístico. Última revisión del sitio: noviembre de 2026. Proyecto hermano de <a href="https://herramientaspro.com.co" rel="noopener">HerramientasPro Colombia</a>.</small>
+</div>
+</body>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intervalos de Confianza | Estadilab</title>
+<meta name="description" content="Calculadora de intervalos de confianza para la media (Z y t), proporción, varianza, y tamaño de muestra requerido. Con interpretación paso a paso. Gratis, sin registro.">
+<link rel="canonical" href="https://estadilab.com/intervalos-confianza/">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
+    --panel: #1a2340; --border: #2a3a5c;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent4: #00ff9d; --accent3: #ff6b6b;
+    --text: #e8edf8; --text2: #8a9bb8; --text3: #4a5a78;
+    --gold: #ffd700;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  header { position: relative; z-index: 10; padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%); display: flex; align-items: center; gap: 1.2rem; }
+  .logo-icon { width: 46px; height: 46px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+  .header-text h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-text p { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+  nav.breadcrumb { position: relative; z-index: 10; padding: 10px 2rem 0; font-size: 0.78rem; color: var(--text3); }
+  nav.breadcrumb a { color: var(--accent); text-decoration: none; }
+
+  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 260px 1fr; grid-template-rows: auto 1fr; min-height: calc(100vh - 100px); }
+  .sidebar { grid-row: 1 / 3; border-right: 1px solid var(--border); background: var(--bg2); padding: 1.2rem 0.8rem; overflow-y: auto; }
+  .sidebar-title { font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text3); padding: 0.4rem 0.8rem; margin-bottom: 0.4rem; }
+  .dist-btn { width: 100%; text-align: left; padding: 0.55rem 0.85rem; background: transparent; border: none; border-radius: 6px; color: var(--text2); font-size: 0.8rem; cursor: pointer; margin-bottom: 3px; line-height: 1.3; }
+  .dist-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .dist-btn.active { background: rgba(0,212,255,0.12); color: var(--accent); font-weight: 600; }
+  .dist-btn .sub { display: block; font-size: 0.68rem; color: var(--text3); font-family: 'Space Mono', monospace; margin-top: 2px; }
+
+  .main-content { padding: 1.4rem 1.8rem; display: flex; flex-direction: column; gap: 1.2rem; }
+  .disclaimer { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); border-left: 3px solid var(--gold); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: #e8d98a; }
+
+  .prueba-header { padding: 1.1rem 1.3rem; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; }
+  .prueba-header h2 { font-size: 1.15rem; margin-bottom: 4px; }
+  .prueba-header .formula { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--accent); background: rgba(0,212,255,0.08); padding: 3px 10px; border-radius: 4px; display: inline-block; }
+
+  .calc-grid { display: grid; grid-template-columns: 360px 1fr; gap: 1.1rem; align-items: start; }
+  @media (max-width: 900px) { .calc-grid { grid-template-columns: 1fr; } .app { grid-template-columns: 1fr; } .sidebar { grid-row: auto; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.2rem; }
+  .panel h3 { font-size: 0.72rem; font-family: 'Space Mono', monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); margin-bottom: 1rem; }
+
+  .param-group { margin-bottom: 0.85rem; }
+  .param-group label { display: block; font-size: 0.78rem; color: var(--text2); margin-bottom: 0.35rem; }
+  .param-group input, .param-group select, .param-group textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.82rem; outline: none; }
+  .param-group input:focus, .param-group select:focus, .param-group textarea:focus { border-color: var(--accent); }
+  .param-group textarea { font-family: 'Space Mono', monospace; min-height: 70px; resize: vertical; }
+  .campos-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+
+  .calc-btn { width: 100%; padding: 0.75rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: 0.4rem; }
+  .error-box { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.78rem; color: #ff4d6d; margin-top: 0.6rem; display: none; }
+
+  .resultado-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-bottom: 1rem; }
+  .resultado-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem; text-align: center; }
+  .resultado-card .lbl { font-size: 0.62rem; font-family: 'Space Mono', monospace; color: var(--text3); text-transform: uppercase; margin-bottom: 0.4rem; }
+  .resultado-card .val { font-family: 'Space Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+
+  .intervalo-box { background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.25); border-radius: 12px; padding: 1.2rem; text-align: center; margin-bottom: 1rem; }
+  .intervalo-box .rango { font-family: 'Space Mono', monospace; font-size: 1.5rem; font-weight: 700; color: var(--accent4); }
+  .intervalo-box .conf-label { font-size: 0.72rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+  .conclusion-text { font-size: 0.82rem; color: var(--text2); line-height: 1.6; margin-top: 0.7rem; text-align: left; }
+
+  .helper-box { font-size: 0.75rem; color: var(--text3); line-height: 1.5; }
+  .helper-box .resultado-mini { font-family: 'Space Mono', monospace; color: var(--accent4); margin-top: 0.5rem; }
+  details.helper-details { margin-top: 0.6rem; }
+  details.helper-details summary { cursor: pointer; font-size: 0.76rem; color: var(--accent); }
+
+  .context-panel { grid-column: 1 / -1; }
+  .context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 900px) { .context-grid { grid-template-columns: 1fr; } }
+  .pregunta-row { display: flex; gap: 0.6rem; margin-top: 0.6rem; }
+  .pregunta-row input { flex: 1; }
+  .pregunta-row button { width: auto; padding: 0.55rem 1.1rem; white-space: nowrap; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; }
+  .sugerencias { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .sugerencia-chip { font-size: 0.7rem; padding: 0.3rem 0.65rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; color: var(--text2); cursor: pointer; }
+  .sugerencia-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .respuesta-box { margin-top: 0.9rem; background: var(--bg3); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 8px; padding: 0.9rem 1rem; font-size: 0.85rem; color: var(--text); line-height: 1.6; display: none; }
+  .respuesta-box.visible { display: block; }
+  .ia-note { font-size: 0.68rem; color: var(--text3); margin-top: 0.5rem; font-style: italic; }
+
+  .welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; text-align: center; gap: 0.8rem; }
+  .welcome .welcome-icon { font-size: 3rem; opacity: 0.5; }
+  .welcome h2 { font-size: 1.3rem; color: var(--text2); font-weight: 400; }
+  .welcome p { font-size: 13.5px; color: var(--text3); max-width: 420px; }
+</style>
+<style id="edu-pro-css">
+.edu-pro{position:relative;z-index:5;max-width:960px;margin:2.5rem auto 0;padding:1.8rem 2rem 3rem;color:var(--text2,#8a9bb8);line-height:1.75;font-size:.95rem;border-top:1px solid var(--border,#2a3a5c)}
+.edu-pro h2{color:var(--text,#e8edf8);font-size:1.35rem;margin:0 0 .8rem}
+.edu-pro h3{color:var(--accent,#00d4ff);font-size:1.02rem;margin:1.4rem 0 .4rem}
+.edu-pro p,.edu-pro ul{margin:0 0 .8rem}.edu-pro ul{padding-left:1.3rem}.edu-pro li{margin-bottom:.35rem}
+.edu-pro strong{color:var(--text,#e8edf8)}.edu-pro code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.85em}
+.edu-pro details{background:var(--panel,#1a2340);border:1px solid var(--border,#2a3a5c);border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem}
+.edu-pro summary{cursor:pointer;color:var(--text,#e8edf8);font-weight:600}.edu-pro details p{margin:.5rem 0 0}
+.edu-pro .ejemplo{background:rgba(0,212,255,.06);border-left:3px solid var(--accent,#00d4ff);padding:.2rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+@media(max-width:700px){.edu-pro{padding:1.4rem 1rem 2.5rem}}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Z o t?", "acceptedAnswer": {"@type": "Answer", "text": "Si conoces la desviación estándar poblacional, usa Z. Si solo tienes la de la muestra (lo habitual), usa t de Student."}}, {"@type": "Question", "name": "¿Qué nivel de confianza elijo?", "acceptedAnswer": {"@type": "Answer", "text": "95 % es el estándar. Sube a 99 % si el error es costoso; baja a 90 % si aceptas más riesgo a cambio de un intervalo más angosto."}}, {"@type": "Question", "name": "¿Por qué el intervalo de la varianza no es simétrico?", "acceptedAnswer": {"@type": "Answer", "text": "Porque se basa en la distribución ji-cuadrado, que es asimétrica."}}, {"@type": "Question", "name": "¿Cuántos datos necesito para un margen de error dado?", "acceptedAnswer": {"@type": "Answer", "text": "Usa el módulo de tamaño de muestra: depende del margen deseado, la confianza y la variabilidad esperada."}}]}</script>
+<style id="hp-footer-css">
+.hp-footer{margin:2.5rem 0 0;padding:1.5rem 1rem 2rem;border-top:1px solid rgba(128,128,128,.35);text-align:center;font:13px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:inherit;opacity:.9}
+.hp-footer a{color:inherit;text-decoration:underline;margin:0 .35rem}
+.hp-footer small{display:block;margin-top:.4rem;opacity:.8;font-size:11.5px}
+</style>
+<style id="hp-mobile-fix">
+/* Móvil: evita que tablas y resultados ensanchen la página (min-width:auto de los ítems de grid) */
+@media (max-width: 900px){.app>*,.layout>*,.main-content,.calc-grid>*,.panel{min-width:0;max-width:100%}.panel table,.main-content table{display:block;overflow-x:auto;max-width:100%}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">±</div>
+  <div class="header-text">
+    <h1>Intervalos de Confianza</h1>
+    <p>Estadilab · Piloto académico</p>
+  </div>
+</header>
+
+<nav class="breadcrumb"><a href="/">Estadilab</a> › Intervalos de Confianza</nav>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-title">Media</div>
+    <button class="dist-btn" onclick="loadIC('media_z', this)">IC para la media <span class="sub">σ conocida (Z)</span></button>
+    <button class="dist-btn" onclick="loadIC('media_t', this)">IC para la media <span class="sub">σ desconocida (t)</span></button>
+    <div class="sidebar-title" style="margin-top:1rem;">Proporción y varianza</div>
+    <button class="dist-btn" onclick="loadIC('proporcion', this)">IC para una proporción</button>
+    <button class="dist-btn" onclick="loadIC('varianza', this)">IC para la varianza</button>
+    <div class="sidebar-title" style="margin-top:1rem;">Tamaño de muestra</div>
+    <button class="dist-btn" onclick="loadIC('tamano_media', this)">Tamaño de muestra <span class="sub">para estimar una media</span></button>
+    <button class="dist-btn" onclick="loadIC('tamano_proporcion', this)">Tamaño de muestra <span class="sub">para estimar una proporción</span></button>
+  </aside>
+
+  <main class="main-content" id="main-content">
+    <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-icon">📏</div>
+      <h2>Selecciona un tipo de intervalo</h2>
+      <p>Elige del panel lateral qué quieres estimar — media, proporción, varianza — o cuántos datos necesitas para un margen de error específico.</p>
+    </div>
+  </main>
+</div>
+
+<script src="js/motor-intervalos.js"></script>
+<script src="js/interpretacion-intervalos.js"></script>
+<script src="../js/hp-codigo.js"></script>
+<script src="js/codigo-intervalos.js"></script>
+<script>
+const CONFIGS = {
+  media_z: {
+    nombre: 'Intervalo de confianza para la media (σ conocida)',
+    formula: 'x̄ ± Z · (σ/√n)',
+    modo: 'campos',
+    campos: [
+      { id: 'n', label: 'n (tamaño de muestra)', default: 25 },
+      { id: 'xbarra', label: 'x̄ (media muestral)', default: 52 },
+      { id: 'sigma', label: 'σ (desviación estándar poblacional)', default: 10 }
+    ],
+    calcular: icMediaZ
+  },
+  media_t: {
+    nombre: 'Intervalo de confianza para la media (σ desconocida)',
+    formula: 'x̄ ± t · (s/√n)',
+    modo: 'campos',
+    campos: [
+      { id: 'n', label: 'n (tamaño de muestra)', default: 25 },
+      { id: 'xbarra', label: 'x̄ (media muestral)', default: 105 },
+      { id: 's', label: 's (desviación estándar muestral)', default: 15 }
+    ],
+    calcular: icMediaT
+  },
+  proporcion: {
+    nombre: 'Intervalo de confianza para una proporción',
+    formula: 'p̂ ± Z · √(p̂(1-p̂)/n)',
+    modo: 'campos',
+    campos: [
+      { id: 'x', label: 'x (número de éxitos)', default: 45 },
+      { id: 'n', label: 'n (tamaño de muestra)', default: 100 }
+    ],
+    calcular: icProporcion
+  },
+  varianza: {
+    nombre: 'Intervalo de confianza para la varianza',
+    formula: '[(n-1)s² / χ²_sup , (n-1)s² / χ²_inf]',
+    modo: 'campos',
+    campos: [
+      { id: 'n', label: 'n (tamaño de muestra)', default: 20 },
+      { id: 's2', label: 's² (varianza muestral)', default: 15 }
+    ],
+    calcular: icVarianza
+  },
+  tamano_media: {
+    nombre: 'Tamaño de muestra para estimar una media',
+    formula: 'n = (Z · σ / E)²',
+    modo: 'tamano_media',
+    campos: [
+      { id: 'sigma', label: 'σ (desviación estándar estimada)', default: 10 },
+      { id: 'error', label: 'E (margen de error deseado)', default: 2 }
+    ],
+    calcular: tamanoMuestraMedia
+  },
+  tamano_proporcion: {
+    nombre: 'Tamaño de muestra para estimar una proporción',
+    formula: 'n = Z² · p(1-p) / E²',
+    modo: 'tamano_proporcion',
+    campos: [
+      { id: 'pEstimado', label: 'p estimado (0-1, deja 0.5 si no tienes idea previa)', default: 0.5 },
+      { id: 'error', label: 'E (margen de error deseado)', default: 0.03 }
+    ],
+    calcular: tamanoMuestraProporcion
+  }
+};
+
+let currentIC = null;
+let currentResultadoIC = null;
+let currentParametrosIC = null;
+
+function loadIC(id, btn) {
+  currentIC = id;
+  document.querySelectorAll('.dist-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const cfg = CONFIGS[id];
+  const main = document.getElementById('main-content');
+  const esTamanoMuestra = id === 'tamano_media' || id === 'tamano_proporcion';
+
+  const camposHTML = `
+    <div class="campos-2col">
+      ${cfg.campos.map(c => `
+        <div class="param-group">
+          <label>${c.label}</label>
+          <input type="number" id="param-${c.id}" value="${c.default}" step="any">
+        </div>
+      `).join('')}
+    </div>
+    ${!esTamanoMuestra && (id === 'media_z' || id === 'media_t' || id === 'varianza') ? `
+      <details class="helper-details">
+        <summary>¿Tienes los datos crudos en vez del resumen?</summary>
+        <div class="helper-box">
+          <p>Pega tus datos (separados por coma, espacio o línea nueva) y obtén n, x̄, s y s² para copiarlos en los campos de arriba.</p>
+          <textarea id="datos-auxiliares" rows="3" placeholder="Ej: 12, 15, 18, 14, 20"></textarea>
+          <button class="calc-btn" style="margin-top:0.5rem;" onclick="calcularAuxiliarIC()">Calcular n, x̄, s y s²</button>
+          <div class="resultado-mini" id="resultado-auxiliar"></div>
+        </div>
+      </details>
+    ` : ''}
+  `;
+
+  const confianzaHTML = esTamanoMuestra ? '' : `
+    <div class="param-group">
+      <label>Nivel de confianza</label>
+      <select id="param-confianza">
+        <option value="0.90">90%</option>
+        <option value="0.95" selected>95%</option>
+        <option value="0.99">99%</option>
+      </select>
+    </div>
+  `;
+  const confianzaHTMLTamano = esTamanoMuestra ? `
+    <div class="param-group">
+      <label>Nivel de confianza deseado</label>
+      <select id="param-confianza">
+        <option value="0.90">90%</option>
+        <option value="0.95" selected>95%</option>
+        <option value="0.99">99%</option>
+      </select>
+    </div>
+  ` : '';
+
+  main.innerHTML = `
+    <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+    <div class="prueba-header">
+      <h2>${cfg.nombre}</h2>
+      <span class="formula">${cfg.formula}</span>
+    </div>
+    <div class="calc-grid">
+      <div class="panel">
+        <h3>Datos</h3>
+        ${camposHTML}
+        ${confianzaHTML}${confianzaHTMLTamano}
+        <button class="calc-btn" onclick="calcularIC()">Calcular</button>
+        <div class="error-box" id="error-box"></div>
+      </div>
+      <div class="panel" id="resultados-panel">
+        <div style="text-align:center;color:var(--text3);font-size:0.85rem;padding:2rem;">Completa los datos y presiona <strong style="color:var(--text)">Calcular</strong></div>
+      </div>
+    </div>
+
+    <div class="context-panel panel">
+      <h3>💬 Contexto de tu análisis y preguntas</h3>
+      <div class="context-grid">
+        <div class="param-group">
+          <label>Describe el proceso o los datos que estás analizando (opcional)</label>
+          <textarea id="contexto" rows="3" placeholder="Ej: Se quiere estimar el promedio de ventas diarias de una tienda."></textarea>
+        </div>
+        <div class="param-group">
+          <label>Pregunta sobre el resultado</label>
+          <div class="pregunta-row">
+            <input type="text" id="pregunta" placeholder="Ej: ¿qué significa este intervalo?">
+            <button onclick="preguntar()">Preguntar</button>
+          </div>
+          <div class="sugerencias">
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿qué significa este intervalo?')">Significado</span>
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿por qué es tan ancho o angosto?')">Ancho del intervalo</span>
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿qué significa el nivel de confianza?')">Nivel de confianza</span>
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿cuántos datos necesito?')">Tamaño de muestra</span>
+          </div>
+        </div>
+      </div>
+      <div class="respuesta-box" id="respuesta-box"></div>
+      <div class="ia-note">Hoy esta respuesta se genera con reglas locales, sin costo. En una fase futura se podrá conectar a IA para preguntas más abiertas.</div>
+    </div>
+  `;
+}
+
+function calcularAuxiliarIC() {
+  const texto = document.getElementById('datos-auxiliares').value;
+  const datos = parsearDatosIC(texto);
+  const box = document.getElementById('resultado-auxiliar');
+  if (!datos || datos.length < 2) {
+    box.textContent = '⚠ Ingresa al menos 2 números válidos.';
+    return;
+  }
+  const r = resumenBasicoIC(datos);
+  box.innerHTML = `n = ${r.n} &nbsp;|&nbsp; x̄ = ${r.media.toFixed(4)} &nbsp;|&nbsp; s = ${r.s.toFixed(4)} &nbsp;|&nbsp; s² = ${r.s2.toFixed(4)}<br><span style="color:var(--text3);">Copia estos valores en los campos correspondientes de arriba.</span>`;
+}
+
+function calcularIC() {
+  const cfg = CONFIGS[currentIC];
+  const errBox = document.getElementById('error-box');
+  let params = {};
+
+  for (const c of cfg.campos) {
+    const v = parseFloat(document.getElementById(`param-${c.id}`).value);
+    if (isNaN(v)) { errBox.textContent = `⚠ Completa el campo "${c.label}".`; errBox.style.display = 'block'; return; }
+    params[c.id] = v;
+  }
+
+  const confianzaEl = document.getElementById('param-confianza');
+  if (confianzaEl) params.confianza = parseFloat(confianzaEl.value);
+
+  if (currentIC === 'proporcion' && (params.x > params.n)) {
+    errBox.textContent = '⚠ El número de éxitos (x) no puede ser mayor que el tamaño de muestra (n).';
+    errBox.style.display = 'block';
+    return;
+  }
+  if (currentIC === 'tamano_proporcion' && (params.pEstimado <= 0 || params.pEstimado >= 1)) {
+    errBox.textContent = '⚠ El valor de p estimado debe estar estrictamente entre 0 y 1.';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  errBox.style.display = 'none';
+  currentParametrosIC = params;
+  const resultado = cfg.calcular(params);
+  currentResultadoIC = resultado;
+  renderResultadoIC(resultado, params);
+
+  const rb = document.getElementById('respuesta-box');
+  if (rb) rb.classList.remove('visible');
+}
+
+function fmtIC2(v, dec) {
+  if (v === undefined || v === null || isNaN(v)) return '—';
+  return v.toFixed(dec);
+}
+
+function renderResultadoIC(r, params) {
+  const panel = document.getElementById('resultados-panel');
+  const esTamanoMuestra = currentIC === 'tamano_media' || currentIC === 'tamano_proporcion';
+  const conclusion = generarSignificadoIC(armarPayloadIC(currentIC, params, r, '', ''));
+
+  if (esTamanoMuestra) {
+    panel.innerHTML = `
+      <h3>Resultado</h3>
+      <div class="intervalo-box">
+        <div class="conf-label">Tamaño de muestra requerido</div>
+        <div class="rango">n = ${r.nRedondeado}</div>
+        <div style="font-size:0.75rem;color:var(--text3);margin-top:0.4rem;">(cálculo exacto: ${fmtIC2(r.nExacto,3)}, redondeado hacia arriba)</div>
+        <div class="conclusion-text">${conclusion}</div>
+      </div>
+      <div id="hpc-host"></div>
+    `;
+    CodigoIntervalos.montar(document.getElementById('hpc-host'), currentIC, CONFIGS[currentIC], params, r);
+    return;
+  }
+
+  const esVarianza = currentIC === 'varianza';
+  const dec = esVarianza ? 3 : (currentIC === 'proporcion' ? 4 : 3);
+
+  panel.innerHTML = `
+    <h3>Resultado</h3>
+    <div class="resultado-grid">
+      <div class="resultado-card"><div class="lbl">Valor puntual</div><div class="val">${fmtIC2(r.puntual, dec)}</div></div>
+      <div class="resultado-card"><div class="lbl">${r.df ? 'Grados de libertad' : (esVarianza ? '&nbsp;' : 'Valor crítico')}</div><div class="val">${r.df ? r.df : (esVarianza ? '—' : fmtIC2(r.valorCritico,4))}</div></div>
+      <div class="resultado-card"><div class="lbl">Confianza</div><div class="val">${(params.confianza*100).toFixed(0)}%</div></div>
+    </div>
+    <div class="intervalo-box">
+      <div class="conf-label">Intervalo de confianza del ${(params.confianza*100).toFixed(0)}%</div>
+      <div class="rango">[ ${fmtIC2(r.inferior, dec)} , ${fmtIC2(r.superior, dec)} ]</div>
+      <div class="conclusion-text">${conclusion}</div>
+    </div>
+    <div id="hpc-host"></div>
+  `;
+  CodigoIntervalos.montar(document.getElementById('hpc-host'), currentIC, CONFIGS[currentIC], params, r);
+}
+
+function usarSugerencia(texto) {
+  document.getElementById('pregunta').value = texto;
+  preguntar();
+}
+
+function preguntar() {
+  if (!currentResultadoIC) return;
+  const contexto = document.getElementById('contexto')?.value || '';
+  const pregunta = document.getElementById('pregunta')?.value || '';
+
+  const payload = armarPayloadIC(currentIC, currentParametrosIC, currentResultadoIC, contexto, pregunta);
+  const respuesta = generarRespuestaIC(payload);
+
+  const box = document.getElementById('respuesta-box');
+  box.textContent = respuesta;
+  box.classList.add('visible');
+
+  if (window.gtag) { gtag('event', 'pregunta_intervalo_confianza', { herramienta: 'intervalos_confianza' }); }
+}
+</script>
+<article class="edu-pro" id="guia-educativa">
+<h2>Intervalos de confianza: estimar con un margen de error</h2>
+<h3>¿Qué es un intervalo de confianza?</h3>
+<p>Una muestra da una estimación puntual (por ejemplo, un promedio de 52), pero el valor real de la población es desconocido. El intervalo de confianza entrega un <strong>rango de valores plausibles</strong> para el parámetro, construido con un método que, repetido muchas veces, captura el valor verdadero en el nivel de confianza indicado (90 %, 95 % o 99 %).</p>
+<h3>Interpretación correcta</h3>
+<p>Con 95 % de confianza <em>no</em> se afirma que hay 95 % de probabilidad de que el parámetro esté en este intervalo específico: el parámetro es fijo, lo aleatorio es el intervalo. Lo correcto es decir que el método produce intervalos que contienen el valor real en el 95 % de las repeticiones.</p>
+<h3>Qué hace más ancho o más angosto un intervalo</h3>
+<ul><li><strong>Mayor confianza</strong> → intervalo más ancho.</li><li><strong>Mayor tamaño de muestra</strong> → intervalo más angosto.</li><li><strong>Mayor variabilidad</strong> de los datos → intervalo más ancho.</li></ul>
+<h3>Tipos incluidos</h3>
+<p>La herramienta calcula intervalos para la media con σ conocida (Z) y desconocida (t de Student), para proporciones, para la varianza (ji-cuadrado, asimétrico) y el <strong>tamaño de muestra</strong> necesario para lograr un margen de error dado.</p>
+<div class="ejemplo"><h3 style="margin-top:.6rem">Ejemplo resuelto</h3><p>En una muestra de n = 25 se obtiene media 50 y desviación estándar 10. Con σ desconocida se usa t con 24 grados de libertad: t = 2,064 para 95 %. El margen de error es 2,064 × 10/√25 = 4,13, por lo que el intervalo de confianza del 95 % es (45,87; 54,13). Si quisieras un margen de error de 2 con la misma variabilidad, necesitarías aproximadamente n = (1,96 × 10/2)² ≈ 97 observaciones.</p></div>
+<h3>Errores frecuentes y buenas prácticas</h3>
+<ul><li><strong>Interpretación.</strong> Un intervalo del 95 % no significa que haya 95 % de probabilidad de que el parámetro esté en ese intervalo concreto; significa que el procedimiento captura el valor verdadero en el 95 % de las muestras.</li><li><strong>Elegir el intervalo correcto.</strong> Para medias con σ desconocida, use t; para proporciones, verifique el tamaño de muestra o use métodos alternativos si es pequeño.</li><li><strong>Muestra no aleatoria.</strong> Ningún intervalo corrige un muestreo sesgado.</li><li><strong>Planeación.</strong> Si necesita un margen de error determinado, calcule el tamaño de muestra antes de recolectar los datos.</li></ul>
+<h3>Preguntas frecuentes</h3>
+<details><summary>¿Z o t?</summary><p>Si conoces la desviación estándar poblacional, usa Z. Si solo tienes la de la muestra (lo habitual), usa t de Student.</p></details>
+<details><summary>¿Qué nivel de confianza elijo?</summary><p>95 % es el estándar. Sube a 99 % si el error es costoso; baja a 90 % si aceptas más riesgo a cambio de un intervalo más angosto.</p></details>
+<details><summary>¿Por qué el intervalo de la varianza no es simétrico?</summary><p>Porque se basa en la distribución ji-cuadrado, que es asimétrica.</p></details>
+<details><summary>¿Cuántos datos necesito para un margen de error dado?</summary><p>Usa el módulo de tamaño de muestra: depende del margen deseado, la confianza y la variabilidad esperada.</p></details>
+<p class="edu-meta" style="font-size:12.5px;color:#666;border-top:1px solid #e0e0dc;margin-top:1.2rem;padding-top:.7rem">Última revisión: noviembre de 2026. Conozca <a href="/metodologia/">cómo se construyen y revisan las herramientas</a>, las <a href="/fuentes/">fuentes de referencia</a> y la <a href="/politica-editorial/">política editorial</a>.</p>
+</article>
+
+<div class="hp-footer" role="contentinfo">
+  <strong>Estadilab</strong> — estadística interactiva y gratuita en español para estudiantes, docentes e investigadores.<br>
+  Proyecto independiente de Juan Carlos Gaviria Chaverra, docente ocasional de la Universidad de Antioquia.<br>
+  <a href="/">Inicio</a> · <a href="/acerca-de/">Acerca de</a> · <a href="/metodologia/">Metodología</a> · <a href="/fuentes/">Fuentes</a> · <a href="/politica-editorial/">Política editorial</a> · <a href="/contacto/">Contacto</a> · <a href="/privacidad/">Privacidad</a> · <a href="/terminos/">Términos</a>
+  <small>Herramientas de uso académico y orientativo; no reemplazan el criterio de un docente o de un estadístico. Última revisión del sitio: noviembre de 2026. Proyecto hermano de <a href="https://herramientaspro.com.co" rel="noopener">HerramientasPro Colombia</a>.</small>
+</div>
+</body>
+</html>

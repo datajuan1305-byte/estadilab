@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R en línea (webR) | Estadilab</title>
+<meta name="description" content="Ejecuta código R directamente en tu navegador, sin instalar nada. Compara resultados de tus análisis estadísticos entre R, Excel, Python y Statgraphics. Gratis.">
+<link rel="canonical" href="https://estadilab.com/r-online/">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
+    --panel: #1a2340; --border: #2a3a5c;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent4: #00ff9d;
+    --text: #e8edf8; --text2: #8a9bb8; --text3: #4a5a78;
+    --gold: #ffd700;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  header { position: relative; z-index: 10; padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%); display: flex; align-items: center; gap: 1.2rem; }
+  .logo-icon { width: 46px; height: 46px; background: linear-gradient(135deg, #1a5276, #2874a6); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; font-weight: 700; }
+  .header-text h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-text p { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+  nav.breadcrumb { position: relative; z-index: 10; padding: 10px 2rem 0; font-size: 0.78rem; color: var(--text3); }
+  nav.breadcrumb a { color: var(--accent); text-decoration: none; }
+  main { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 1.4rem 2rem 3rem; display: flex; flex-direction: column; gap: 1.2rem; }
+  .disclaimer { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); border-left: 3px solid var(--gold); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: #e8d98a; }
+  .info-box { background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.2); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: var(--text2); line-height: 1.6; }
+
+  .prueba-header { padding: 1.1rem 1.3rem; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; }
+  .prueba-header h2 { font-size: 1.15rem; margin-bottom: 4px; }
+  .prueba-header p { font-size: 0.82rem; color: var(--text2); margin-top: 0.5rem; line-height: 1.6; }
+
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 1.2rem; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.2rem; }
+  .panel h3 { font-size: 0.72rem; font-family: 'Space Mono', monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); margin-bottom: 1rem; }
+
+  .script-item { margin-bottom: 1rem; }
+  .script-item .titulo { font-size: 0.8rem; color: var(--text); font-weight: 600; margin-bottom: 0.4rem; }
+  .script-item pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.7rem; font-family: 'Space Mono', monospace; font-size: 0.72rem; color: var(--accent4); overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+  .btn-copiar { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-radius: 6px; padding: 3px 10px; font-size: 0.68rem; cursor: pointer; margin-top: 0.3rem; }
+  .btn-copiar:hover { border-color: var(--accent); color: var(--accent); }
+
+  .iframe-container { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; height: 700px; background: #1e1e1e; }
+  .iframe-container iframe { width: 100%; height: 100%; border: none; }
+
+  .tip-box { font-size: 0.72rem; color: var(--text3); line-height: 1.6; margin-top: 0.8rem; }
+  .tip-box strong { color: var(--text2); }
+</style>
+<style id="edu-pro-css">
+.edu-pro{position:relative;z-index:5;max-width:960px;margin:2.5rem auto 0;padding:1.8rem 2rem 3rem;color:var(--text2,#8a9bb8);line-height:1.75;font-size:.95rem;border-top:1px solid var(--border,#2a3a5c)}
+.edu-pro h2{color:var(--text,#e8edf8);font-size:1.35rem;margin:0 0 .8rem}
+.edu-pro h3{color:var(--accent,#00d4ff);font-size:1.02rem;margin:1.4rem 0 .4rem}
+.edu-pro p,.edu-pro ul{margin:0 0 .8rem}.edu-pro ul{padding-left:1.3rem}.edu-pro li{margin-bottom:.35rem}
+.edu-pro strong{color:var(--text,#e8edf8)}.edu-pro code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.85em}
+.edu-pro details{background:var(--panel,#1a2340);border:1px solid var(--border,#2a3a5c);border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem}
+.edu-pro summary{cursor:pointer;color:var(--text,#e8edf8);font-weight:600}.edu-pro details p{margin:.5rem 0 0}
+.edu-pro .ejemplo{background:rgba(0,212,255,.06);border-left:3px solid var(--accent,#00d4ff);padding:.2rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+@media(max-width:700px){.edu-pro{padding:1.4rem 1rem 2.5rem}}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Necesito instalar algo?", "acceptedAnswer": {"@type": "Answer", "text": "No. Solo un navegador moderno y conexión a internet para la primera carga."}}, {"@type": "Question", "name": "¿Se guardan mis datos?", "acceptedAnswer": {"@type": "Answer", "text": "El código se ejecuta en tu navegador; no se envían a nuestros servidores. Guarda tu script por tu cuenta si quieres conservarlo."}}, {"@type": "Question", "name": "¿Puedo usar cualquier paquete de R?", "acceptedAnswer": {"@type": "Answer", "text": "No todos; WebR ofrece un conjunto de paquetes compatibles con el navegador."}}, {"@type": "Question", "name": "¿Sirve para aprender?", "acceptedAnswer": {"@type": "Answer", "text": "Sí: es ideal para practicar lo visto en clase y contrastar resultados con las calculadoras."}}]}</script>
+<style id="hp-footer-css">
+.hp-footer{margin:2.5rem 0 0;padding:1.5rem 1rem 2rem;border-top:1px solid rgba(128,128,128,.35);text-align:center;font:13px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:inherit;opacity:.9}
+.hp-footer a{color:inherit;text-decoration:underline;margin:0 .35rem}
+.hp-footer small{display:block;margin-top:.4rem;opacity:.8;font-size:11.5px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">R</div>
+  <div class="header-text">
+    <h1>R en línea (webR)</h1>
+    <p>Estadilab · Piloto académico</p>
+  </div>
+</header>
+
+<nav class="breadcrumb"><a href="/">Estadilab</a> › R en línea</nav>
+
+<main>
+  <div class="disclaimer">⚠️ Este entorno de R corre íntegramente en tu navegador (proyecto de código abierto <strong>webR</strong>). Incluye editor, consola, explorador de archivos y panel de gráficos. Úsalo para comparar resultados con las calculadoras del sitio o con tu R/RStudio local.</div>
+  <div class="info-box">🔒 <strong>Privacidad:</strong> el código y los datos que escribas aquí se ejecutan localmente en tu propio navegador — no se envían a ningún servidor nuestro ni de terceros para procesarse.</div>
+
+  <div class="prueba-header">
+    <h2>Entorno de R interactivo</h2>
+    <p>Escribe tu script en el panel del editor y presiona <strong>"Run"</strong> (o Ctrl+Enter) para ejecutarlo. La primera carga puede tardar unos segundos mientras el navegador descarga el motor de R.</p>
+  </div>
+
+  <div class="iframe-container">
+    <iframe src="https://webr.sh" title="Entorno de R en línea (webR)" loading="lazy"></iframe>
+  </div>
+  <p style="font-size:0.68rem;color:var(--text3);text-align:center;">Logo de R © 2016 The R Foundation, usado bajo licencia <a href="https://creativecommons.org/licenses/by-sa/4.0/" style="color:var(--text3);">CC BY-SA 4.0</a>.</p>
+</main>
+
+<script>
+function copiarScript(id) {
+  const texto = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(texto).then(() => {
+    if (window.gtag) { gtag('event', 'copiar_script_r', { herramienta: 'r_online' }); }
+  });
+}
+</script>
+<article class="edu-pro" id="guia-educativa">
+<h2>R en línea: programar estadística sin instalar nada</h2>
+<h3>¿Qué es R y por qué se usa?</h3>
+<p>R es un lenguaje de programación gratuito y de código abierto, creado para el análisis estadístico y la visualización de datos. Es estándar en universidades, investigación y ciencia de datos. Esta herramienta lo ejecuta directamente en tu navegador gracias a <strong>WebR</strong>, una versión de R compilada para la web.</p>
+<h3>Ventajas de usarlo en el navegador</h3>
+<ul><li>No requiere instalar R ni RStudio.</li><li>Funciona desde cualquier computador, también en aulas con restricciones.</li><li>Tus datos se procesan en tu propio equipo, no en un servidor.</li></ul>
+<h3>Ideas para empezar</h3>
+<p>Prueba <code>x &lt;- c(12, 15, 18, 14, 20)</code> y luego <code>summary(x)</code>, <code>mean(x)</code> o <code>sd(x)</code>. Para comparar con las calculadoras de este sitio, ejecuta <code>t.test()</code>, <code>cor.test()</code> o <code>lm()</code> con los mismos datos y verifica que los resultados coinciden. Es una buena manera de aprender la sintaxis a partir de ejercicios que ya conoces.</p>
+<h3>Limitaciones</h3>
+<p>La primera carga puede tardar unos segundos y algunos paquetes no están disponibles en WebR. Para proyectos grandes conviene instalar R y RStudio en tu equipo.</p>
+<div class="ejemplo"><h3 style="margin-top:.6rem">Ejercicio sugerido</h3><p>Reproduce el ANOVA del ejemplo de la calculadora: <code>grupo &lt;- factor(rep(c("A","B","C"), each = 3))</code>, <code>y &lt;- c(5,6,7,8,9,10,11,12,13)</code> y luego <code>summary(aov(y ~ grupo))</code>. Debes obtener F = 27 con 2 y 6 grados de libertad. Prueba también <code>cor.test(c(1,2,3,4,5), c(2,4,5,4,5))</code> y compara con r = 0,775.</p></div>
+<h3>Errores frecuentes y buenas prácticas</h3>
+<p>El error más común al empezar con R es copiar código sin entenderlo. Ejecute cada línea por separado y observe qué devuelve antes de pasar a la siguiente. Revise siempre los nombres de las variables (R distingue mayúsculas de minúsculas), el separador decimal al importar datos y los valores faltantes (<code>NA</code>), que pueden hacer que funciones como <code>mean()</code> devuelvan <code>NA</code> si no se usa <code>na.rm = TRUE</code>.</p><p>Como buena práctica, guarde su código en un archivo de texto, comente lo que hace cada bloque y fije una semilla con <code>set.seed()</code> cuando use números aleatorios, para que otra persona pueda reproducir su resultado. El entorno en el navegador sirve para aprender y probar ideas; para proyectos grandes conviene instalar R y RStudio en su equipo.</p>
+<h3>Del navegador al análisis propio</h3>
+<p>Cuando domine los comandos básicos, el siguiente paso es analizar sus propios datos: cárguelos desde un archivo CSV, revise su estructura con <code>str()</code> y <code>summary()</code>, haga gráficos exploratorios con <code>hist()</code> y <code>boxplot()</code> y luego aplique las pruebas que necesite (<code>t.test()</code>, <code>cor.test()</code>, <code>lm()</code>, <code>aov()</code>). Cada función de R tiene documentación: escribir <code>?t.test</code> abre su ayuda con ejemplos. Practique con conjuntos de datos que incluye R, como <code>mtcars</code> o <code>iris</code>, antes de usar datos reales, para comprobar que entiende lo que hace cada comando.</p>
+<h3>Preguntas frecuentes</h3>
+<details><summary>¿Necesito instalar algo?</summary><p>No. Solo un navegador moderno y conexión a internet para la primera carga.</p></details>
+<details><summary>¿Se guardan mis datos?</summary><p>El código se ejecuta en tu navegador; no se envían a nuestros servidores. Guarda tu script por tu cuenta si quieres conservarlo.</p></details>
+<details><summary>¿Puedo usar cualquier paquete de R?</summary><p>No todos; WebR ofrece un conjunto de paquetes compatibles con el navegador.</p></details>
+<details><summary>¿Sirve para aprender?</summary><p>Sí: es ideal para practicar lo visto en clase y contrastar resultados con las calculadoras.</p></details>
+<p class="edu-meta" style="font-size:12.5px;color:#666;border-top:1px solid #e0e0dc;margin-top:1.2rem;padding-top:.7rem">Última revisión: noviembre de 2026. Conozca <a href="/metodologia/">cómo se construyen y revisan las herramientas</a>, las <a href="/fuentes/">fuentes de referencia</a> y la <a href="/politica-editorial/">política editorial</a>.</p>
+</article>
+
+<div class="hp-footer" role="contentinfo">
+  <strong>Estadilab</strong> — estadística interactiva y gratuita en español para estudiantes, docentes e investigadores.<br>
+  Proyecto independiente de Juan Carlos Gaviria Chaverra, docente ocasional de la Universidad de Antioquia.<br>
+  <a href="/">Inicio</a> · <a href="/acerca-de/">Acerca de</a> · <a href="/metodologia/">Metodología</a> · <a href="/fuentes/">Fuentes</a> · <a href="/politica-editorial/">Política editorial</a> · <a href="/contacto/">Contacto</a> · <a href="/privacidad/">Privacidad</a> · <a href="/terminos/">Términos</a>
+  <small>Herramientas de uso académico y orientativo; no reemplazan el criterio de un docente o de un estadístico. Última revisión del sitio: noviembre de 2026. Proyecto hermano de <a href="https://herramientaspro.com.co" rel="noopener">HerramientasPro Colombia</a>.</small>
+</div>
+</body>
+</html>

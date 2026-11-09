@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pruebas de Hipótesis | Estadilab</title>
+<meta name="description" content="Calculadora de pruebas de hipótesis: Z y t para la media (una y dos muestras, pareadas), Z para proporciones (una y dos muestras), y Chi-cuadrado para la varianza. Con valor-p, valores críticos y conclusión. Gratis, sin registro.">
+<link rel="canonical" href="https://estadilab.com/pruebas-hipotesis/">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
+    --panel: #1a2340; --border: #2a3a5c;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent4: #00ff9d; --accent3: #ff6b6b;
+    --text: #e8edf8; --text2: #8a9bb8; --text3: #4a5a78;
+    --gold: #ffd700;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  header { position: relative; z-index: 10; padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%); display: flex; align-items: center; gap: 1.2rem; }
+  .logo-icon { width: 46px; height: 46px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+  .header-text h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-text p { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+  nav.breadcrumb { position: relative; z-index: 10; padding: 10px 2rem 0; font-size: 0.78rem; color: var(--text3); }
+  nav.breadcrumb a { color: var(--accent); text-decoration: none; }
+
+  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 260px 1fr; grid-template-rows: auto 1fr; min-height: calc(100vh - 100px); }
+  .sidebar { grid-row: 1 / 3; border-right: 1px solid var(--border); background: var(--bg2); padding: 1.2rem 0.8rem; overflow-y: auto; }
+  .sidebar-title { font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text3); padding: 0.4rem 0.8rem; margin-bottom: 0.4rem; }
+  .dist-btn { width: 100%; text-align: left; padding: 0.55rem 0.85rem; background: transparent; border: none; border-radius: 6px; color: var(--text2); font-size: 0.8rem; cursor: pointer; margin-bottom: 3px; line-height: 1.3; }
+  .dist-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .dist-btn.active { background: rgba(0,212,255,0.12); color: var(--accent); font-weight: 600; }
+  .dist-btn .sub { display: block; font-size: 0.68rem; color: var(--text3); font-family: 'Space Mono', monospace; margin-top: 2px; }
+
+  .main-content { padding: 1.4rem 1.8rem; display: flex; flex-direction: column; gap: 1.2rem; }
+  .disclaimer { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); border-left: 3px solid var(--gold); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: #e8d98a; }
+
+  .prueba-header { padding: 1.1rem 1.3rem; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; }
+  .prueba-header h2 { font-size: 1.15rem; margin-bottom: 4px; }
+  .prueba-header .hipotesis { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--accent); background: rgba(0,212,255,0.08); padding: 3px 10px; border-radius: 4px; display: inline-block; }
+
+  .calc-grid { display: grid; grid-template-columns: 360px 1fr; gap: 1.1rem; align-items: start; }
+  @media (max-width: 900px) { .calc-grid { grid-template-columns: 1fr; } .app { grid-template-columns: 1fr; } .sidebar { grid-row: auto; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.2rem; }
+  .panel h3 { font-size: 0.72rem; font-family: 'Space Mono', monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); margin-bottom: 1rem; }
+
+  .param-group { margin-bottom: 0.85rem; }
+  .param-group label { display: block; font-size: 0.78rem; color: var(--text2); margin-bottom: 0.35rem; }
+  .param-group input, .param-group select, .param-group textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.82rem; outline: none; }
+  .param-group input:focus, .param-group select:focus, .param-group textarea:focus { border-color: var(--accent); }
+  .param-group textarea { font-family: 'Space Mono', monospace; min-height: 70px; resize: vertical; }
+  .campos-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+
+  .calc-btn { width: 100%; padding: 0.75rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: 0.4rem; }
+  .error-box { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.78rem; color: #ff4d6d; margin-top: 0.6rem; display: none; }
+
+  .resultado-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-bottom: 1rem; }
+  .resultado-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem; text-align: center; }
+  .resultado-card .lbl { font-size: 0.62rem; font-family: 'Space Mono', monospace; color: var(--text3); text-transform: uppercase; margin-bottom: 0.4rem; }
+  .resultado-card .val { font-family: 'Space Mono', monospace; font-size: 1.15rem; font-weight: 700; color: var(--accent); }
+
+  .decision-box { border-radius: 10px; padding: 1rem 1.2rem; font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem; }
+  .decision-box.rechaza { background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); color: var(--accent3); }
+  .decision-box.no-rechaza { background: rgba(0,255,157,0.1); border: 1px solid rgba(0,255,157,0.3); color: var(--accent4); }
+  .conclusion-text { font-size: 0.82rem; color: var(--text2); line-height: 1.6; font-weight: 400; margin-top: 0.5rem; }
+
+  .helper-box { font-size: 0.75rem; color: var(--text3); line-height: 1.5; }
+  .helper-box .resultado-mini { font-family: 'Space Mono', monospace; color: var(--accent4); margin-top: 0.5rem; }
+  details.helper-details { margin-top: 0.6rem; }
+  details.helper-details summary { cursor: pointer; font-size: 0.76rem; color: var(--accent); }
+
+  .context-panel { grid-column: 1 / -1; }
+  .context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 900px) { .context-grid { grid-template-columns: 1fr; } }
+  .pregunta-row { display: flex; gap: 0.6rem; margin-top: 0.6rem; }
+  .pregunta-row input { flex: 1; }
+  .pregunta-row button { width: auto; padding: 0.55rem 1.1rem; white-space: nowrap; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; }
+  .sugerencias { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .sugerencia-chip { font-size: 0.7rem; padding: 0.3rem 0.65rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; color: var(--text2); cursor: pointer; }
+  .sugerencia-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .respuesta-box { margin-top: 0.9rem; background: var(--bg3); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 8px; padding: 0.9rem 1rem; font-size: 0.85rem; color: var(--text); line-height: 1.6; display: none; }
+  .respuesta-box.visible { display: block; }
+  .ia-note { font-size: 0.68rem; color: var(--text3); margin-top: 0.5rem; font-style: italic; }
+
+  .welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; text-align: center; gap: 0.8rem; }
+  .welcome .welcome-icon { font-size: 3rem; opacity: 0.5; }
+  .welcome h2 { font-size: 1.3rem; color: var(--text2); font-weight: 400; }
+  .welcome p { font-size: 13.5px; color: var(--text3); max-width: 420px; }
+</style>
+<style id="edu-pro-css">
+.edu-pro{position:relative;z-index:5;max-width:960px;margin:2.5rem auto 0;padding:1.8rem 2rem 3rem;color:var(--text2,#8a9bb8);line-height:1.75;font-size:.95rem;border-top:1px solid var(--border,#2a3a5c)}
+.edu-pro h2{color:var(--text,#e8edf8);font-size:1.35rem;margin:0 0 .8rem}
+.edu-pro h3{color:var(--accent,#00d4ff);font-size:1.02rem;margin:1.4rem 0 .4rem}
+.edu-pro p,.edu-pro ul{margin:0 0 .8rem}.edu-pro ul{padding-left:1.3rem}.edu-pro li{margin-bottom:.35rem}
+.edu-pro strong{color:var(--text,#e8edf8)}.edu-pro code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.85em}
+.edu-pro details{background:var(--panel,#1a2340);border:1px solid var(--border,#2a3a5c);border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem}
+.edu-pro summary{cursor:pointer;color:var(--text,#e8edf8);font-weight:600}.edu-pro details p{margin:.5rem 0 0}
+.edu-pro .ejemplo{background:rgba(0,212,255,.06);border-left:3px solid var(--accent,#00d4ff);padding:.2rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+@media(max-width:700px){.edu-pro{padding:1.4rem 1rem 2.5rem}}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Qué es el valor p?", "acceptedAnswer": {"@type": "Answer", "text": "La probabilidad, si H₀ fuera cierta, de obtener un resultado al menos tan extremo como el observado. No es la probabilidad de que H₀ sea cierta."}}, {"@type": "Question", "name": "¿Prueba de una cola o de dos colas?", "acceptedAnswer": {"@type": "Answer", "text": "Dos colas si buscas cualquier diferencia; una cola solo si, antes de ver los datos, tienes una razón para esperar una dirección específica."}}, {"@type": "Question", "name": "¿Qué pasa si mi valor p es 0,06?", "acceptedAnswer": {"@type": "Answer", "text": "Con α = 0,05 no se rechaza H₀, pero 0,05 es una convención; informa el valor p exacto y el tamaño del efecto."}}, {"@type": "Question", "name": "¿Cuándo uso datos pareados?", "acceptedAnswer": {"@type": "Answer", "text": "Cuando las dos mediciones provienen de las mismas unidades (antes y después en el mismo sujeto)."}}]}</script>
+<style id="hp-footer-css">
+.hp-footer{margin:2.5rem 0 0;padding:1.5rem 1rem 2rem;border-top:1px solid rgba(128,128,128,.35);text-align:center;font:13px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:inherit;opacity:.9}
+.hp-footer a{color:inherit;text-decoration:underline;margin:0 .35rem}
+.hp-footer small{display:block;margin-top:.4rem;opacity:.8;font-size:11.5px}
+</style>
+<style id="hp-mobile-fix">
+/* Móvil: evita que tablas y resultados ensanchen la página (min-width:auto de los ítems de grid) */
+@media (max-width: 900px){.app>*,.layout>*,.main-content,.calc-grid>*,.panel{min-width:0;max-width:100%}.panel table,.main-content table{display:block;overflow-x:auto;max-width:100%}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">H₀</div>
+  <div class="header-text">
+    <h1>Pruebas de Hipótesis</h1>
+    <p>Estadilab · Piloto académico</p>
+  </div>
+</header>
+
+<nav class="breadcrumb"><a href="/">Estadilab</a> › Pruebas de Hipótesis</nav>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-title">Media</div>
+    <button class="dist-btn" onclick="loadPrueba('z_media', this)">Z para la media <span class="sub">σ conocida, una muestra</span></button>
+    <button class="dist-btn" onclick="loadPrueba('t_media', this)">t para la media <span class="sub">σ desconocida, una muestra</span></button>
+    <button class="dist-btn" onclick="loadPrueba('t_dos_muestras', this)">t para diferencia de medias <span class="sub">dos muestras independientes</span></button>
+    <button class="dist-btn" onclick="loadPrueba('t_pareada', this)">t para datos pareados <span class="sub">antes / después</span></button>
+    <div class="sidebar-title" style="margin-top:1rem;">Proporciones</div>
+    <button class="dist-btn" onclick="loadPrueba('z_proporcion', this)">Z para una proporción</button>
+    <button class="dist-btn" onclick="loadPrueba('z_dos_proporciones', this)">Z para diferencia de proporciones</button>
+    <div class="sidebar-title" style="margin-top:1rem;">Varianza</div>
+    <button class="dist-btn" onclick="loadPrueba('chi2_varianza', this)">Chi-cuadrado para la varianza</button>
+  </aside>
+
+  <main class="main-content" id="main-content">
+    <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-icon">🔬</div>
+      <h2>Selecciona una prueba de hipótesis</h2>
+      <p>Elige del panel lateral la prueba que necesitas — para media, proporciones o varianza — e ingresa tus datos o estadísticos resumen.</p>
+    </div>
+  </main>
+</div>
+
+<script src="js/motor-pruebas.js"></script>
+<script src="js/interpretacion-pruebas.js"></script>
+<script src="../js/hp-codigo.js"></script>
+<script src="js/codigo-pruebas.js"></script>
+<script>
+const PRUEBAS = {
+  z_media: {
+    nombre: 'Z para la media (σ conocida)',
+    hipotesis: 'H₀: μ = μ₀   vs   H₁: μ ≠/&gt;/&lt; μ₀',
+    modo: 'resumen',
+    campos: [
+      { id: 'n', label: 'n (tamaño de muestra)', default: 30 },
+      { id: 'xbarra', label: 'x̄ (media muestral)', default: 52 },
+      { id: 'sigma', label: 'σ (desviación estándar poblacional)', default: 10 },
+      { id: 'mu0', label: 'μ₀ (valor hipotético a probar)', default: 50 }
+    ]
+  },
+  t_media: {
+    nombre: 't para la media (σ desconocida)',
+    hipotesis: 'H₀: μ = μ₀   vs   H₁: μ ≠/&gt;/&lt; μ₀',
+    modo: 'resumen',
+    campos: [
+      { id: 'n', label: 'n (tamaño de muestra)', default: 25 },
+      { id: 'xbarra', label: 'x̄ (media muestral)', default: 105 },
+      { id: 's', label: 's (desviación estándar muestral)', default: 15 },
+      { id: 'mu0', label: 'μ₀ (valor hipotético a probar)', default: 100 }
+    ]
+  },
+  t_dos_muestras: {
+    nombre: 't para diferencia de medias (dos muestras independientes)',
+    hipotesis: 'H₀: μ₁ = μ₂   vs   H₁: μ₁ ≠/&gt;/&lt; μ₂',
+    modo: 'resumen',
+    campos: [
+      { id: 'n1', label: 'n₁', default: 10 },
+      { id: 'xbarra1', label: 'x̄₁', default: 85 },
+      { id: 's1', label: 's₁', default: 5 },
+      { id: 'n2', label: 'n₂', default: 12 },
+      { id: 'xbarra2', label: 'x̄₂', default: 80 },
+      { id: 's2', label: 's₂', default: 6 }
+    ],
+    extra: `<div class="param-group"><label>¿Varianzas poblacionales iguales?</label>
+      <select id="param-varianzasIguales">
+        <option value="si">Sí (usar varianza combinada / pooled)</option>
+        <option value="no">No (corrección de Welch)</option>
+      </select></div>`
+  },
+  t_pareada: {
+    nombre: 't para datos pareados',
+    hipotesis: 'H₀: μ_d = μ₀ (diferencia esperada)',
+    modo: 'pareada'
+  },
+  z_proporcion: {
+    nombre: 'Z para una proporción',
+    hipotesis: 'H₀: p = p₀   vs   H₁: p ≠/&gt;/&lt; p₀',
+    modo: 'resumen',
+    campos: [
+      { id: 'x', label: 'x (número de éxitos)', default: 45 },
+      { id: 'n', label: 'n (tamaño de muestra)', default: 100 },
+      { id: 'p0', label: 'p₀ (proporción hipotética, 0-1)', default: 0.5 }
+    ]
+  },
+  z_dos_proporciones: {
+    nombre: 'Z para diferencia de proporciones',
+    hipotesis: 'H₀: p₁ = p₂   vs   H₁: p₁ ≠/&gt;/&lt; p₂',
+    modo: 'resumen',
+    campos: [
+      { id: 'x1', label: 'x₁ (éxitos muestra 1)', default: 45 },
+      { id: 'n1', label: 'n₁', default: 100 },
+      { id: 'x2', label: 'x₂ (éxitos muestra 2)', default: 60 },
+      { id: 'n2', label: 'n₂', default: 100 }
+    ]
+  },
+  chi2_varianza: {
+    nombre: 'Chi-cuadrado para la varianza',
+    hipotesis: 'H₀: σ² = σ₀²   vs   H₁: σ² ≠/&gt;/&lt; σ₀²',
+    modo: 'resumen',
+    campos: [
+      { id: 'n', label: 'n (tamaño de muestra)', default: 20 },
+      { id: 's2', label: 's² (varianza muestral)', default: 15 },
+      { id: 'sigma0_2', label: 'σ₀² (varianza hipotética)', default: 10 }
+    ]
+  }
+};
+
+const CALCULAR = {
+  z_media: pruebaZMedia,
+  t_media: pruebaTMedia,
+  t_dos_muestras: pruebaTDosMuestras,
+  t_pareada: pruebaTPareada,
+  z_proporcion: pruebaZProporcion,
+  z_dos_proporciones: pruebaZDosProporciones,
+  chi2_varianza: pruebaChi2Varianza
+};
+
+let currentPrueba = null;
+let currentResultado = null;
+let currentParametros = null;
+
+function loadPrueba(id, btn) {
+  currentPrueba = id;
+  document.querySelectorAll('.dist-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const cfg = PRUEBAS[id];
+  const main = document.getElementById('main-content');
+
+  let camposHTML = '';
+  if (cfg.modo === 'resumen') {
+    camposHTML = `
+      <div class="campos-2col">
+        ${cfg.campos.map(c => `
+          <div class="param-group">
+            <label>${c.label}</label>
+            <input type="number" id="param-${c.id}" value="${c.default}" step="any">
+          </div>
+        `).join('')}
+      </div>
+      ${cfg.extra || ''}
+      <details class="helper-details">
+        <summary>¿Tienes los datos crudos en vez del resumen?</summary>
+        <div class="helper-box">
+          <p>Pega tus datos (separados por coma, espacio o línea nueva) y obtén n, x̄ y s para copiarlos en los campos de arriba.</p>
+          <textarea id="datos-auxiliares" rows="3" placeholder="Ej: 12, 15, 18, 14, 20"></textarea>
+          <button class="calc-btn" style="margin-top:0.5rem;" onclick="calcularAuxiliar()">Calcular n, x̄ y s</button>
+          <div class="resultado-mini" id="resultado-auxiliar"></div>
+        </div>
+      </details>
+    `;
+  } else if (cfg.modo === 'pareada') {
+    camposHTML = `
+      <div class="param-group">
+        <label>Muestra 1 (antes) — separados por coma, espacio o línea nueva</label>
+        <textarea id="param-muestra1" rows="4" placeholder="Ej: 10, 12, 9, 15, 11, 13"></textarea>
+      </div>
+      <div class="param-group">
+        <label>Muestra 2 (después) — mismo orden y misma cantidad que la muestra 1</label>
+        <textarea id="param-muestra2" rows="4" placeholder="Ej: 12, 13, 10, 17, 12, 14"></textarea>
+      </div>
+      <div class="param-group">
+        <label>μ₀ (diferencia hipotética, usualmente 0)</label>
+        <input type="number" id="param-mu0" value="0" step="any">
+      </div>
+    `;
+  }
+
+  main.innerHTML = `
+    <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+    <div class="prueba-header">
+      <h2>${cfg.nombre}</h2>
+      <span class="hipotesis">${cfg.hipotesis}</span>
+    </div>
+    <div class="calc-grid">
+      <div class="panel">
+        <h3>Datos de la prueba</h3>
+        ${camposHTML}
+        <div class="param-group">
+          <label>Nivel de significancia (α)</label>
+          <input type="number" id="param-alpha" value="0.05" min="0.001" max="0.5" step="0.01">
+        </div>
+        <div class="param-group">
+          <label>Tipo de prueba</label>
+          <select id="param-cola">
+            <option value="bilateral">Bilateral (H₁: ≠)</option>
+            <option value="derecha">Unilateral derecha (H₁: &gt;)</option>
+            <option value="izquierda">Unilateral izquierda (H₁: &lt;)</option>
+          </select>
+        </div>
+        <button class="calc-btn" onclick="calcularPrueba()">Calcular</button>
+        <div class="error-box" id="error-box"></div>
+      </div>
+      <div class="panel" id="resultados-panel">
+        <div style="text-align:center;color:var(--text3);font-size:0.85rem;padding:2rem;">Completa los datos y presiona <strong style="color:var(--text)">Calcular</strong></div>
+      </div>
+    </div>
+
+    <div class="context-panel panel">
+      <h3>💬 Contexto de tu análisis y preguntas</h3>
+      <div class="context-grid">
+        <div class="param-group">
+          <label>Describe el proceso o los datos que estás analizando (opcional)</label>
+          <textarea id="contexto" rows="3" placeholder="Ej: Se quiere probar si el nuevo método de enseñanza mejora las notas promedio."></textarea>
+        </div>
+        <div class="param-group">
+          <label>Pregunta sobre el resultado</label>
+          <div class="pregunta-row">
+            <input type="text" id="pregunta" placeholder="Ej: ¿qué significa el valor-p?">
+            <button onclick="preguntar()">Preguntar</button>
+          </div>
+          <div class="sugerencias">
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿qué significa el valor-p?')">Valor-p</span>
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿por qué se rechaza o no H0?')">Decisión</span>
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿qué es el error tipo I?')">Error Tipo I</span>
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿bilateral o unilateral?')">Cola de la prueba</span>
+          </div>
+        </div>
+      </div>
+      <div class="respuesta-box" id="respuesta-box"></div>
+      <div class="ia-note">Hoy esta respuesta se genera con reglas locales, sin costo. En una fase futura se podrá conectar a IA para preguntas más abiertas.</div>
+    </div>
+  `;
+}
+
+function calcularAuxiliar() {
+  const texto = document.getElementById('datos-auxiliares').value;
+  const datos = parsearDatosPruebas(texto);
+  const box = document.getElementById('resultado-auxiliar');
+  if (!datos || datos.length < 2) {
+    box.textContent = '⚠ Ingresa al menos 2 números válidos.';
+    return;
+  }
+  const r = resumenBasico(datos);
+  box.innerHTML = `n = ${r.n} &nbsp;|&nbsp; x̄ = ${r.media.toFixed(4)} &nbsp;|&nbsp; s = ${r.s.toFixed(4)}<br><span style="color:var(--text3);">Copia estos valores en los campos correspondientes de arriba.</span>`;
+}
+
+function calcularPrueba() {
+  const cfg = PRUEBAS[currentPrueba];
+  const errBox = document.getElementById('error-box');
+  const alpha = parseFloat(document.getElementById('param-alpha').value);
+  const cola = document.getElementById('param-cola').value;
+
+  if (isNaN(alpha) || alpha <= 0 || alpha >= 1) {
+    errBox.textContent = '⚠ El nivel de significancia debe estar entre 0 y 1.';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  let params = { alpha, cola };
+
+  if (cfg.modo === 'resumen') {
+    for (const c of cfg.campos) {
+      const v = parseFloat(document.getElementById(`param-${c.id}`).value);
+      if (isNaN(v)) { errBox.textContent = `⚠ Completa el campo "${c.label}".`; errBox.style.display = 'block'; return; }
+      params[c.id] = v;
+    }
+    if (currentPrueba === 't_dos_muestras') {
+      params.varianzasIguales = document.getElementById('param-varianzasIguales').value === 'si';
+    }
+  } else if (cfg.modo === 'pareada') {
+    const m1 = parsearDatosPruebas(document.getElementById('param-muestra1').value);
+    const m2 = parsearDatosPruebas(document.getElementById('param-muestra2').value);
+    const mu0 = parseFloat(document.getElementById('param-mu0').value);
+    if (!m1 || !m2) { errBox.textContent = '⚠ Revisa que ambas muestras tengan solo números válidos.'; errBox.style.display = 'block'; return; }
+    if (m1.length !== m2.length) { errBox.textContent = `⚠ Las dos muestras deben tener la misma cantidad de datos (muestra 1: ${m1.length}, muestra 2: ${m2.length}).`; errBox.style.display = 'block'; return; }
+    if (m1.length < 2) { errBox.textContent = '⚠ Se necesitan al menos 2 pares de datos.'; errBox.style.display = 'block'; return; }
+    const diferencias = m1.map((a, i) => m2[i] - a);
+    params.diferencias = diferencias;
+    params.mu0 = isNaN(mu0) ? 0 : mu0;
+  }
+
+  errBox.style.display = 'none';
+  currentParametros = params;
+  const resultado = CALCULAR[currentPrueba](params);
+  currentResultado = resultado;
+  renderResultado(resultado, params);
+
+  const rb = document.getElementById('respuesta-box');
+  if (rb) rb.classList.remove('visible');
+}
+
+function renderResultado(r, params) {
+  const panel = document.getElementById('resultados-panel');
+  panel.innerHTML = `
+    <h3>Resultado</h3>
+    <div class="resultado-grid">
+      <div class="resultado-card"><div class="lbl">Estadístico ${r.nombreEstadistico}</div><div class="val">${r.estadistico.toFixed(4)}</div></div>
+      <div class="resultado-card"><div class="lbl">${r.df ? 'Grados de libertad' : '&nbsp;'}</div><div class="val">${r.df ? r.df.toFixed(2) : '—'}</div></div>
+      <div class="resultado-card"><div class="lbl">Valor-p</div><div class="val">${r.pValor.toFixed(6)}</div></div>
+    </div>
+    <div class="resultado-grid" style="grid-template-columns:1fr;">
+      <div class="resultado-card" style="text-align:left;">
+        <div class="lbl">Valor(es) crítico(s)</div>
+        <div class="val" style="font-size:0.95rem;">${r.valorCritico}</div>
+      </div>
+    </div>
+    <div class="decision-box ${r.rechazaH0 ? 'rechaza' : 'no-rechaza'}">
+      ${r.rechazaH0 ? '❌ Se rechaza H₀' : '✅ No se rechaza H₀'}
+      <div class="conclusion-text">${generarConclusionFormal(armarPayloadPrueba(currentPrueba, params, r, '', ''))}</div>
+    </div>
+    <div id="hpc-host"></div>
+  `;
+  CodigoPruebas.montar(document.getElementById('hpc-host'), currentPrueba, PRUEBAS[currentPrueba], params, r);
+}
+
+function usarSugerencia(texto) {
+  document.getElementById('pregunta').value = texto;
+  preguntar();
+}
+
+function preguntar() {
+  if (!currentResultado) return;
+  const contexto = document.getElementById('contexto')?.value || '';
+  const pregunta = document.getElementById('pregunta')?.value || '';
+
+  const payload = armarPayloadPrueba(currentPrueba, currentParametros, currentResultado, contexto, pregunta);
+  const respuesta = generarRespuestaPrueba(payload);
+
+  const box = document.getElementById('respuesta-box');
+  box.textContent = respuesta;
+  box.classList.add('visible');
+
+  if (window.gtag) { gtag('event', 'pregunta_prueba_hipotesis', { herramienta: 'pruebas_hipotesis' }); }
+}
+</script>
+<article class="edu-pro" id="guia-educativa">
+<h2>Pruebas de hipótesis: decidir con evidencia</h2>
+<h3>La lógica de una prueba de hipótesis</h3>
+<p>Se plantea una <strong>hipótesis nula (H₀)</strong>, que representa "no hay efecto" o "no hay diferencia", y una <strong>alternativa (H₁)</strong>. Con los datos se calcula un estadístico de prueba y su <strong>valor p</strong>: la probabilidad de observar un resultado tan extremo como el obtenido si H₀ fuera cierta. Si el valor p es menor que el nivel de significancia α (usualmente 0,05), se rechaza H₀.</p>
+<h3>Errores y potencia</h3>
+<p>El <strong>error tipo I</strong> es rechazar una H₀ verdadera (su probabilidad es α); el <strong>error tipo II</strong> es no rechazar una H₀ falsa (probabilidad β). La <strong>potencia</strong> (1 − β) es la capacidad de detectar un efecto real y crece con el tamaño de muestra y con la magnitud del efecto.</p>
+<h3>Qué prueba usar</h3>
+<ul><li><strong>Z y t para la media:</strong> una muestra, dos muestras independientes o datos pareados.</li><li><strong>Proporciones:</strong> una o dos poblaciones.</li><li><strong>Varianza (ji-cuadrado) y razón de varianzas (F).</strong></li></ul><p>Verifica los supuestos: independencia, normalidad aproximada y, en dos muestras, si las varianzas pueden suponerse iguales.</p>
+<h3>Cómo interpretar el resultado</h3>
+<p>"No rechazar H₀" no demuestra que sea cierta: solo indica que no hay evidencia suficiente en contra. Y un valor p pequeño no mide la importancia práctica; acompáñalo del tamaño del efecto y de un intervalo de confianza.</p>
+<div class="ejemplo"><h3 style="margin-top:.6rem">Ejemplo resuelto</h3><p>Se quiere probar H₀: μ = 50 contra H₁: μ ≠ 50. Con n = 25, media muestral 53 y desviación estándar 10, el estadístico es t = (53 − 50)/(10/√25) = 1,5, con 24 grados de libertad. El valor p de dos colas es 0,147, mayor que 0,05, así que no se rechaza H₀: con estos datos no hay evidencia suficiente de que la media sea distinta de 50. Nota que el intervalo de confianza al 95 % (48,87; 57,13) contiene el 50, lo que es coherente con la decisión.</p></div>
+<h3>Errores frecuentes y buenas prácticas</h3>
+<ul><li><strong>Definir la hipótesis antes de ver los datos.</strong> Elegir la hipótesis después de mirar los resultados invalida el valor p.</li><li><strong>Pruebas múltiples.</strong> Si hace muchas pruebas, aumenta la probabilidad de un falso positivo; aplique correcciones o reduzca el número de comparaciones.</li><li><strong>"No significativo" no es "sin efecto".</strong> Puede significar que la muestra era pequeña. Revise la potencia.</li><li><strong>Datos pareados.</strong> Si las mediciones son del mismo sujeto antes y después, use una prueba pareada, no dos muestras independientes.</li><li><strong>Supuestos.</strong> Verifique normalidad y varianzas, o use alternativas no paramétricas.</li></ul>
+<h3>Preguntas frecuentes</h3>
+<details><summary>¿Qué es el valor p?</summary><p>La probabilidad, si H₀ fuera cierta, de obtener un resultado al menos tan extremo como el observado. No es la probabilidad de que H₀ sea cierta.</p></details>
+<details><summary>¿Prueba de una cola o de dos colas?</summary><p>Dos colas si buscas cualquier diferencia; una cola solo si, antes de ver los datos, tienes una razón para esperar una dirección específica.</p></details>
+<details><summary>¿Qué pasa si mi valor p es 0,06?</summary><p>Con α = 0,05 no se rechaza H₀, pero 0,05 es una convención; informa el valor p exacto y el tamaño del efecto.</p></details>
+<details><summary>¿Cuándo uso datos pareados?</summary><p>Cuando las dos mediciones provienen de las mismas unidades (antes y después en el mismo sujeto).</p></details>
+<p class="edu-meta" style="font-size:12.5px;color:#666;border-top:1px solid #e0e0dc;margin-top:1.2rem;padding-top:.7rem">Última revisión: noviembre de 2026. Conozca <a href="/metodologia/">cómo se construyen y revisan las herramientas</a>, las <a href="/fuentes/">fuentes de referencia</a> y la <a href="/politica-editorial/">política editorial</a>.</p>
+</article>
+
+<div class="hp-footer" role="contentinfo">
+  <strong>Estadilab</strong> — estadística interactiva y gratuita en español para estudiantes, docentes e investigadores.<br>
+  Proyecto independiente de Juan Carlos Gaviria Chaverra, docente ocasional de la Universidad de Antioquia.<br>
+  <a href="/">Inicio</a> · <a href="/acerca-de/">Acerca de</a> · <a href="/metodologia/">Metodología</a> · <a href="/fuentes/">Fuentes</a> · <a href="/politica-editorial/">Política editorial</a> · <a href="/contacto/">Contacto</a> · <a href="/privacidad/">Privacidad</a> · <a href="/terminos/">Términos</a>
+  <small>Herramientas de uso académico y orientativo; no reemplazan el criterio de un docente o de un estadístico. Última revisión del sitio: noviembre de 2026. Proyecto hermano de <a href="https://herramientaspro.com.co" rel="noopener">HerramientasPro Colombia</a>.</small>
+</div>
+</body>
+</html>

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Distribuciones Muestrales | Estadilab</title>
+<meta name="description" content="Calculadora de distribución muestral de la media y la proporción, y simulador interactivo del Teorema del Límite Central. Gratis, sin registro.">
+<link rel="canonical" href="https://estadilab.com/distribuciones-muestrales/">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
+    --panel: #1a2340; --border: #2a3a5c;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent4: #00ff9d; --accent3: #ff6b6b;
+    --text: #e8edf8; --text2: #8a9bb8; --text3: #4a5a78;
+    --gold: #ffd700;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  header { position: relative; z-index: 10; padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%); display: flex; align-items: center; gap: 1.2rem; }
+  .logo-icon { width: 46px; height: 46px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+  .header-text h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-text p { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+  nav.breadcrumb { position: relative; z-index: 10; padding: 10px 2rem 0; font-size: 0.78rem; color: var(--text3); }
+  nav.breadcrumb a { color: var(--accent); text-decoration: none; }
+
+  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 240px 1fr; grid-template-rows: auto 1fr; min-height: calc(100vh - 100px); }
+  .sidebar { grid-row: 1 / 3; border-right: 1px solid var(--border); background: var(--bg2); padding: 1.2rem 0.8rem; overflow-y: auto; }
+  .dist-btn { width: 100%; text-align: left; padding: 0.6rem 0.85rem; background: transparent; border: none; border-radius: 6px; color: var(--text2); font-size: 0.82rem; cursor: pointer; margin-bottom: 3px; line-height:1.3; }
+  .dist-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .dist-btn.active { background: rgba(0,212,255,0.12); color: var(--accent); font-weight: 600; }
+  .dist-btn .sub { display:block; font-size:0.66rem; color:var(--text3); font-family:'Space Mono',monospace; margin-top:2px; }
+
+  .main-content { padding: 1.4rem 1.8rem; display: flex; flex-direction: column; gap: 1.2rem; }
+  .disclaimer { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); border-left: 3px solid var(--gold); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: #e8d98a; }
+
+  .prueba-header { padding: 1.1rem 1.3rem; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; }
+  .prueba-header h2 { font-size: 1.15rem; margin-bottom: 4px; }
+  .prueba-header .formula { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--accent); background: rgba(0,212,255,0.08); padding: 3px 10px; border-radius: 4px; display: inline-block; }
+  .prueba-header p { font-size: 0.8rem; color: var(--text2); margin-top: 0.5rem; }
+
+  .calc-grid { display: grid; grid-template-columns: 340px 1fr; gap: 1.1rem; align-items: start; }
+  @media (max-width: 900px) { .calc-grid { grid-template-columns: 1fr; } .app { grid-template-columns: 1fr; } .sidebar { grid-row: auto; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.2rem; }
+  .panel h3 { font-size: 0.72rem; font-family: 'Space Mono', monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); margin-bottom: 1rem; }
+
+  .param-group { margin-bottom: 0.85rem; }
+  .param-group label { display: block; font-size: 0.78rem; color: var(--text2); margin-bottom: 0.35rem; }
+  .param-group input, .param-group select { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.82rem; outline: none; }
+  .param-group input:focus, .param-group select:focus { border-color: var(--accent); }
+  .campos-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+  .query-type-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 0.9rem; }
+  .query-type-btn { padding: 6px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text2); font-size: 0.7rem; cursor: pointer; text-align: center; font-family: inherit; }
+  .query-type-btn.active { background: rgba(0,212,255,0.1); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .hidden { display: none !important; }
+
+  .calc-btn { width: 100%; padding: 0.75rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: 0.4rem; }
+  .error-box { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.78rem; color: #ff4d6d; margin-top: 0.6rem; display: none; }
+
+  .resultado-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-bottom: 1rem; }
+  .resultado-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem; text-align: center; }
+  .resultado-card .lbl { font-size: 0.62rem; font-family: 'Space Mono', monospace; color: var(--text3); text-transform: uppercase; margin-bottom: 0.4rem; }
+  .resultado-card .val { font-family: 'Space Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+
+  .valor-grande { background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.25); border-radius: 12px; padding: 1.2rem; text-align: center; margin-bottom: 1rem; }
+  .valor-grande .num { font-family: 'Space Mono', monospace; font-size: 2rem; font-weight: 700; color: var(--accent4); }
+  .valor-grande .lbl { font-size: 0.72rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+  .conclusion-text { font-size: 0.82rem; color: var(--text2); line-height: 1.6; margin-top: 0.7rem; text-align: left; }
+
+  .aviso-condicion { border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.78rem; margin-bottom: 0.9rem; }
+  .aviso-condicion.ok { background: rgba(0,255,157,0.08); border: 1px solid rgba(0,255,157,0.25); color: var(--accent4); }
+  .aviso-condicion.warn { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); color: var(--gold); }
+
+  .chart-container { position: relative; height: 220px; }
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 700px) { .chart-row { grid-template-columns: 1fr; } }
+  .chart-titulo { font-size: 0.68rem; text-align: center; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+
+  .context-panel { grid-column: 1 / -1; }
+  .context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 900px) { .context-grid { grid-template-columns: 1fr; } }
+  .param-group textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.82rem; outline: none; }
+  .pregunta-row { display: flex; gap: 0.6rem; margin-top: 0.6rem; }
+  .pregunta-row input { flex: 1; }
+  .pregunta-row button { width: auto; padding: 0.55rem 1.1rem; white-space: nowrap; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; }
+  .sugerencias { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .sugerencia-chip { font-size: 0.7rem; padding: 0.3rem 0.65rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; color: var(--text2); cursor: pointer; }
+  .sugerencia-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .respuesta-box { margin-top: 0.9rem; background: var(--bg3); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 8px; padding: 0.9rem 1rem; font-size: 0.85rem; color: var(--text); line-height: 1.6; display: none; }
+  .respuesta-box.visible { display: block; }
+  .ia-note { font-size: 0.68rem; color: var(--text3); margin-top: 0.5rem; font-style: italic; }
+
+  .welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; text-align: center; gap: 0.8rem; }
+  .welcome .welcome-icon { font-size: 3rem; opacity: 0.5; }
+  .welcome h2 { font-size: 1.3rem; color: var(--text2); font-weight: 400; }
+  .welcome p { font-size: 13.5px; color: var(--text3); max-width: 420px; }
+</style>
+<style id="edu-pro-css">
+.edu-pro{position:relative;z-index:5;max-width:960px;margin:2.5rem auto 0;padding:1.8rem 2rem 3rem;color:var(--text2,#8a9bb8);line-height:1.75;font-size:.95rem;border-top:1px solid var(--border,#2a3a5c)}
+.edu-pro h2{color:var(--text,#e8edf8);font-size:1.35rem;margin:0 0 .8rem}
+.edu-pro h3{color:var(--accent,#00d4ff);font-size:1.02rem;margin:1.4rem 0 .4rem}
+.edu-pro p,.edu-pro ul{margin:0 0 .8rem}.edu-pro ul{padding-left:1.3rem}.edu-pro li{margin-bottom:.35rem}
+.edu-pro strong{color:var(--text,#e8edf8)}.edu-pro code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.85em}
+.edu-pro details{background:var(--panel,#1a2340);border:1px solid var(--border,#2a3a5c);border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem}
+.edu-pro summary{cursor:pointer;color:var(--text,#e8edf8);font-weight:600}.edu-pro details p{margin:.5rem 0 0}
+.edu-pro .ejemplo{background:rgba(0,212,255,.06);border-left:3px solid var(--accent,#00d4ff);padding:.2rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+@media(max-width:700px){.edu-pro{padding:1.4rem 1rem 2.5rem}}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cuál es la diferencia entre desviación estándar y error estándar?", "acceptedAnswer": {"@type": "Answer", "text": "La desviación estándar describe la variabilidad de los datos individuales; el error estándar describe la variabilidad del estadístico (por ejemplo, la media) entre muestras."}}, {"@type": "Question", "name": "¿Qué pasa si la población no es normal?", "acceptedAnswer": {"@type": "Answer", "text": "Con n grande, la media muestral sigue siendo aproximadamente normal por el teorema del límite central. Con n pequeño, la forma de la población sí importa."}}, {"@type": "Question", "name": "¿Por qué n ≥ 30?", "acceptedAnswer": {"@type": "Answer", "text": "Es una regla práctica, no una ley: con poblaciones casi simétricas bastan menos datos, con muy asimétricas se necesitan más."}}, {"@type": "Question", "name": "¿La distribución muestral es la de mi muestra?", "acceptedAnswer": {"@type": "Answer", "text": "No. Tu muestra es una sola realización; la distribución muestral es el comportamiento teórico de todas las muestras posibles."}}]}</script>
+<style id="hp-footer-css">
+.hp-footer{margin:2.5rem 0 0;padding:1.5rem 1rem 2rem;border-top:1px solid rgba(128,128,128,.35);text-align:center;font:13px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:inherit;opacity:.9}
+.hp-footer a{color:inherit;text-decoration:underline;margin:0 .35rem}
+.hp-footer small{display:block;margin-top:.4rem;opacity:.8;font-size:11.5px}
+</style>
+<style id="hp-mobile-fix">
+/* Móvil: evita que tablas y resultados ensanchen la página (min-width:auto de los ítems de grid) */
+@media (max-width: 900px){.app>*,.layout>*,.main-content,.calc-grid>*,.panel{min-width:0;max-width:100%}.panel table,.main-content table{display:block;overflow-x:auto;max-width:100%}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">x̄</div>
+  <div class="header-text">
+    <h1>Distribuciones Muestrales</h1>
+    <p>Estadilab · Piloto académico</p>
+  </div>
+</header>
+
+<nav class="breadcrumb"><a href="/">Estadilab</a> › Distribuciones Muestrales</nav>
+
+<div class="app">
+  <aside class="sidebar">
+    <button class="dist-btn" onclick="loadModuloM('media', this)">Distribución muestral <span class="sub">de la media</span></button>
+    <button class="dist-btn" onclick="loadModuloM('proporcion', this)">Distribución muestral <span class="sub">de la proporción</span></button>
+    <button class="dist-btn" onclick="loadModuloM('simulador', this)">🎲 Simulador del TLC <span class="sub">Teorema del Límite Central</span></button>
+  </aside>
+
+  <main class="main-content" id="main-content">
+    <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-icon">🔔</div>
+      <h2>Selecciona un módulo</h2>
+      <p>Calcula probabilidades sobre medias o proporciones muestrales, o simula visualmente el Teorema del Límite Central.</p>
+    </div>
+  </main>
+</div>
+
+<script src="js/motor-muestrales.js"></script>
+<script src="js/interpretacion-muestrales.js"></script>
+<script>
+let currentModuloM = null;
+let currentResultadoM = null;
+let currentParametrosM = null;
+let currentQueryTypeM = 'leq';
+let chartSim1 = null, chartSim2 = null;
+
+function loadModuloM(id, btn) {
+  currentModuloM = id;
+  document.querySelectorAll('.dist-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const main = document.getElementById('main-content');
+
+  let bodyHTML = '';
+  if (id === 'media') bodyHTML = renderMedia();
+  else if (id === 'proporcion') bodyHTML = renderProporcion();
+  else if (id === 'simulador') bodyHTML = renderSimulador();
+
+  const contextoHTML = id !== 'simulador' ? `
+    <div class="context-panel panel">
+      <h3>💬 Contexto de tu análisis y preguntas</h3>
+      <div class="context-grid">
+        <div class="param-group">
+          <label>Describe el proceso que estás analizando (opcional)</label>
+          <textarea id="contexto" rows="3" placeholder="Ej: Peso promedio de bolsas de café empacadas por una máquina."></textarea>
+        </div>
+        <div class="param-group">
+          <label>Pregunta sobre el resultado</label>
+          <div class="pregunta-row">
+            <input type="text" id="pregunta" placeholder="Ej: ¿qué es el error estándar?">
+            <button onclick="preguntarM()">Preguntar</button>
+          </div>
+          <div class="sugerencias">
+            <span class="sugerencia-chip" onclick="usarSugerenciaM('¿qué es el error estándar?')">Error estándar</span>
+            <span class="sugerencia-chip" onclick="usarSugerenciaM('¿por qué se vuelve normal?')">Por qué normal</span>
+            <span class="sugerencia-chip" onclick="usarSugerenciaM('¿la condición es válida?')">Condición válida</span>
+            <span class="sugerencia-chip" onclick="usarSugerenciaM('¿qué pasa si aumento el tamaño de muestra?')">Tamaño de muestra</span>
+          </div>
+        </div>
+      </div>
+      <div class="respuesta-box" id="respuesta-box"></div>
+      <div class="ia-note">Hoy esta respuesta se genera con reglas locales, sin costo. En una fase futura se podrá conectar a IA para preguntas más abiertas.</div>
+    </div>
+  ` : '';
+
+  main.innerHTML = `
+    <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+    ${bodyHTML}
+    ${contextoHTML}
+  `;
+
+  if (id === 'simulador') {
+    document.getElementById('slider-n').addEventListener('input', () => {
+      document.getElementById('slider-n-valor').textContent = document.getElementById('slider-n').value;
+    });
+    ejecutarSimulacion();
+  }
+}
+
+// ═══ DISTRIBUCIÓN MUESTRAL DE LA MEDIA ═══
+function renderMedia() {
+  return `
+    <div class="prueba-header">
+      <h2>Distribución muestral de la media</h2>
+      <span class="formula">x̄ ~ N(μ, σ/√n)</span>
+    </div>
+    <div class="calc-grid">
+      <div class="panel">
+        <h3>Parámetros</h3>
+        <div class="campos-2col">
+          <div class="param-group"><label>μ (media poblacional)</label><input type="number" id="param-mu" value="100" step="any"></div>
+          <div class="param-group"><label>σ (desv. estándar poblacional)</label><input type="number" id="param-sigma" value="15" min="0" step="any"></div>
+        </div>
+        <div class="param-group"><label>n (tamaño de muestra)</label><input type="number" id="param-n" value="25" min="1" step="1"></div>
+        <div class="query-type-grid">
+          <button class="query-type-btn active" onclick="setQueryTypeM('leq', this)">P(x̄ ≤ a)</button>
+          <button class="query-type-btn" onclick="setQueryTypeM('geq', this)">P(x̄ ≥ a)</button>
+          <button class="query-type-btn" onclick="setQueryTypeM('entre', this)">P(a ≤ x̄ ≤ b)</button>
+        </div>
+        <div class="param-group"><label>a</label><input type="number" id="param-a" value="103" step="any"></div>
+        <div class="param-group hidden" id="grupo-b"><label>b</label><input type="number" id="param-b" value="107" step="any"></div>
+        <button class="calc-btn" onclick="calcularMedia()">Calcular</button>
+        <div class="error-box" id="error-box"></div>
+      </div>
+      <div class="panel" id="resultados-panel">
+        <div style="text-align:center;color:var(--text3);font-size:0.85rem;padding:2rem;">Completa los datos y presiona <strong style="color:var(--text)">Calcular</strong></div>
+      </div>
+    </div>
+  `;
+}
+
+function setQueryTypeM(tipo, btn) {
+  currentQueryTypeM = tipo;
+  document.querySelectorAll('.query-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('grupo-b').classList.toggle('hidden', tipo !== 'entre');
+}
+
+function calcularMedia() {
+  const errBox = document.getElementById('error-box');
+  const mu = parseFloat(document.getElementById('param-mu').value);
+  const sigma = parseFloat(document.getElementById('param-sigma').value);
+  const n = parseInt(document.getElementById('param-n').value);
+  const a = parseFloat(document.getElementById('param-a').value);
+  const b = currentQueryTypeM === 'entre' ? parseFloat(document.getElementById('param-b').value) : undefined;
+
+  if ([mu, sigma, a].some(isNaN) || isNaN(n) || n < 1 || sigma < 0) { errBox.textContent = '⚠ Revisa los parámetros ingresados.'; errBox.style.display = 'block'; return; }
+  if (currentQueryTypeM === 'entre' && isNaN(b)) { errBox.textContent = '⚠ Completa el valor de b.'; errBox.style.display = 'block'; return; }
+  errBox.style.display = 'none';
+
+  const dm = distribucionMuestralMedia({ mu, sigma, n });
+  const pr = probMuestralMedia({ mu, ee: dm.ee, tipoConsulta: currentQueryTypeM, a, b });
+  const r = { ...dm, ...pr };
+  currentResultadoM = r;
+  currentParametrosM = { mu, sigma, n, a, b };
+
+  document.getElementById('resultados-panel').innerHTML = `
+    <h3>Resultado</h3>
+    <div class="resultado-grid">
+      <div class="resultado-card"><div class="lbl">μ_x̄</div><div class="val">${mu}</div></div>
+      <div class="resultado-card"><div class="lbl">Error estándar</div><div class="val">${r.ee.toFixed(4)}</div></div>
+      <div class="resultado-card"><div class="lbl">Valor Z</div><div class="val">${r.zA.toFixed(4)}</div></div>
+    </div>
+    <div class="valor-grande">
+      <div class="lbl">Probabilidad</div>
+      <div class="num">${r.prob.toFixed(6)}</div>
+      <div class="conclusion-text">${generarResumenMuestral(armarPayloadMuestral('media', currentParametrosM, r, '', ''))}</div>
+    </div>
+  `;
+  const rb = document.getElementById('respuesta-box'); if (rb) rb.classList.remove('visible');
+}
+
+// ═══ DISTRIBUCIÓN MUESTRAL DE LA PROPORCIÓN ═══
+function renderProporcion() {
+  return `
+    <div class="prueba-header">
+      <h2>Distribución muestral de la proporción</h2>
+      <span class="formula">p̂ ~ N(p, √(p(1-p)/n))</span>
+    </div>
+    <div class="calc-grid">
+      <div class="panel">
+        <h3>Parámetros</h3>
+        <div class="campos-2col">
+          <div class="param-group"><label>p (proporción poblacional, 0-1)</label><input type="number" id="param-p" value="0.4" min="0" max="1" step="any"></div>
+          <div class="param-group"><label>n (tamaño de muestra)</label><input type="number" id="param-n" value="50" min="1" step="1"></div>
+        </div>
+        <div class="query-type-grid">
+          <button class="query-type-btn active" onclick="setQueryTypeM('leq', this)">P(p̂ ≤ a)</button>
+          <button class="query-type-btn" onclick="setQueryTypeM('geq', this)">P(p̂ ≥ a)</button>
+          <button class="query-type-btn" onclick="setQueryTypeM('entre', this)">P(a ≤ p̂ ≤ b)</button>
+        </div>
+        <div class="param-group"><label>a</label><input type="number" id="param-a" value="0.45" step="any"></div>
+        <div class="param-group hidden" id="grupo-b"><label>b</label><input type="number" id="param-b" value="0.5" step="any"></div>
+        <button class="calc-btn" onclick="calcularProporcion()">Calcular</button>
+        <div class="error-box" id="error-box"></div>
+      </div>
+      <div class="panel" id="resultados-panel">
+        <div style="text-align:center;color:var(--text3);font-size:0.85rem;padding:2rem;">Completa los datos y presiona <strong style="color:var(--text)">Calcular</strong></div>
+      </div>
+    </div>
+  `;
+}
+
+function calcularProporcion() {
+  const errBox = document.getElementById('error-box');
+  const p = parseFloat(document.getElementById('param-p').value);
+  const n = parseInt(document.getElementById('param-n').value);
+  const a = parseFloat(document.getElementById('param-a').value);
+  const b = currentQueryTypeM === 'entre' ? parseFloat(document.getElementById('param-b').value) : undefined;
+
+  if (isNaN(p) || p <= 0 || p >= 1 || isNaN(n) || n < 1 || isNaN(a)) { errBox.textContent = '⚠ Revisa los parámetros (p debe estar entre 0 y 1).'; errBox.style.display = 'block'; return; }
+  if (currentQueryTypeM === 'entre' && isNaN(b)) { errBox.textContent = '⚠ Completa el valor de b.'; errBox.style.display = 'block'; return; }
+  errBox.style.display = 'none';
+
+  const dp = distribucionMuestralProporcion({ p, n });
+  const pr = probMuestralProporcion({ p, ee: dp.ee, tipoConsulta: currentQueryTypeM, a, b });
+  const r = { ...dp, ...pr };
+  currentResultadoM = r;
+  currentParametrosM = { p, n, a, b };
+
+  document.getElementById('resultados-panel').innerHTML = `
+    <div class="aviso-condicion ${r.condicionValida ? 'ok' : 'warn'}">
+      ${r.condicionValida ? '✅' : '⚠️'} n·p = ${r.np.toFixed(2)}, n·(1-p) = ${r.nq.toFixed(2)} — condición de normalidad ${r.condicionValida ? 'cumplida' : 'NO cumplida del todo'} (ambas deberían ser ≥ 5)
+    </div>
+    <h3>Resultado</h3>
+    <div class="resultado-grid">
+      <div class="resultado-card"><div class="lbl">p</div><div class="val">${p}</div></div>
+      <div class="resultado-card"><div class="lbl">Error estándar</div><div class="val">${r.ee.toFixed(4)}</div></div>
+      <div class="resultado-card"><div class="lbl">Valor Z</div><div class="val">${r.zA.toFixed(4)}</div></div>
+    </div>
+    <div class="valor-grande">
+      <div class="lbl">Probabilidad</div>
+      <div class="num">${r.prob.toFixed(6)}</div>
+      <div class="conclusion-text">${generarResumenMuestral(armarPayloadMuestral('proporcion', currentParametrosM, r, '', ''))}</div>
+    </div>
+  `;
+  const rb = document.getElementById('respuesta-box'); if (rb) rb.classList.remove('visible');
+}
+
+// ═══ SIMULADOR DEL TLC ═══
+function renderSimulador() {
+  return `
+    <div class="prueba-header">
+      <h2>Simulador del Teorema del Límite Central</h2>
+      <p>Elige una población NO normal y un tamaño de muestra. A la izquierda verás la forma real de esa población; a la derecha, la distribución de miles de medias muestrales de tamaño n tomadas de ella. Observa cómo, al aumentar n, el histograma de la derecha se vuelve más y más parecido a una campana normal — sin importar que la población original no lo sea.</p>
+    </div>
+    <div class="panel">
+      <h3>Configuración</h3>
+      <div class="campos-2col">
+        <div class="param-group">
+          <label>Población (distribución original)</label>
+          <select id="sel-poblacion" onchange="ejecutarSimulacion()">
+            <option value="uniforme">Uniforme (0 a 10)</option>
+            <option value="exponencial" selected>Exponencial — muy sesgada</option>
+            <option value="bimodal">Bimodal — dos picos</option>
+          </select>
+        </div>
+        <div class="param-group">
+          <label>Tamaño de muestra: n = <span id="slider-n-valor">30</span></label>
+          <input type="range" id="slider-n" min="1" max="100" value="30" oninput="ejecutarSimulacion()" style="padding:0;">
+        </div>
+      </div>
+      <div class="chart-row">
+        <div>
+          <div class="chart-titulo">Población original (un solo dato)</div>
+          <div class="chart-container"><canvas id="chart-poblacion"></canvas></div>
+        </div>
+        <div>
+          <div class="chart-titulo">Medias de 2.000 muestras de tamaño n</div>
+          <div class="chart-container"><canvas id="chart-medias"></canvas></div>
+        </div>
+      </div>
+      <div class="conclusion-text" id="conclusion-simulador" style="margin-top:1rem;"></div>
+    </div>
+  `;
+}
+
+function construirHistograma(datos, numBins) {
+  const min = Math.min(...datos);
+  const max = Math.max(...datos);
+  const ancho = (max - min) / numBins || 1;
+  const bins = Array.from({ length: numBins }, (_, i) => ({ inicio: min + i * ancho, conteo: 0 }));
+  datos.forEach(x => {
+    let idx = Math.floor((x - min) / ancho);
+    if (idx >= numBins) idx = numBins - 1;
+    if (idx < 0) idx = 0;
+    bins[idx].conteo++;
+  });
+  return bins;
+}
+
+function ejecutarSimulacion() {
+  const tipoPoblacion = document.getElementById('sel-poblacion').value;
+  const n = parseInt(document.getElementById('slider-n').value);
+  document.getElementById('slider-n-valor').textContent = n;
+
+  const pob = POBLACIONES[tipoPoblacion];
+  const muestraPoblacion = generarMuestraPoblacion(tipoPoblacion, 3000);
+  const medias = simularMediasMuestrales(tipoPoblacion, n, 2000);
+
+  const binsPob = construirHistograma(muestraPoblacion, 20);
+  const binsMedias = construirHistograma(medias, 20);
+
+  if (chartSim1) chartSim1.destroy();
+  if (chartSim2) chartSim2.destroy();
+
+  const ctx1 = document.getElementById('chart-poblacion');
+  chartSim1 = new Chart(ctx1, {
+    type: 'bar',
+    data: { labels: binsPob.map(b => b.inicio.toFixed(1)), datasets: [{ data: binsPob.map(b => b.conteo), backgroundColor: '#ff6b6b88', borderColor: '#ff6b6b', borderWidth: 1 }] },
+    options: chartOptionsSimple()
+  });
+
+  const ctx2 = document.getElementById('chart-medias');
+  chartSim2 = new Chart(ctx2, {
+    type: 'bar',
+    data: { labels: binsMedias.map(b => b.inicio.toFixed(2)), datasets: [{ data: binsMedias.map(b => b.conteo), backgroundColor: '#00d4ff88', borderColor: '#00d4ff', borderWidth: 1 }] },
+    options: chartOptionsSimple()
+  });
+
+  const mediaObs = medias.reduce((a, b) => a + b, 0) / medias.length;
+  const sdObs = Math.sqrt(medias.reduce((acc, x) => acc + (x - mediaObs) ** 2, 0) / (medias.length - 1));
+  const eeTeorico = pob.sigma / Math.sqrt(n);
+
+  document.getElementById('conclusion-simulador').innerHTML = generarResumenMuestral(armarPayloadMuestral('simulador', { n, nombrePoblacion: pob.nombre, numSimulaciones: 2000 }, {}, '', ''))
+    + ` <br><br>📊 Verificación numérica: media de las 2.000 muestras = <strong style="color:var(--accent4)">${mediaObs.toFixed(3)}</strong> (la teoría predice ${pob.mu.toFixed(3)}) — desviación estándar observada de las medias = <strong style="color:var(--accent4)">${sdObs.toFixed(3)}</strong> (la teoría predice σ/√n = ${eeTeorico.toFixed(3)}).`;
+}
+
+function chartOptionsSimple() {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a2340', borderColor: '#2a3a5c', borderWidth: 1, titleColor: '#e8edf8', bodyColor: '#8a9bb8' } },
+    scales: {
+      x: { ticks: { color: '#4a5a78', font: { size: 8 }, maxTicksLimit: 8 }, grid: { color: 'rgba(42,58,92,0.4)' } },
+      y: { ticks: { color: '#4a5a78', font: { size: 9 } }, grid: { color: 'rgba(42,58,92,0.4)' } }
+    }
+  };
+}
+
+// ═══ CONTEXTO / PREGUNTAS ═══
+function usarSugerenciaM(texto) {
+  document.getElementById('pregunta').value = texto;
+  preguntarM();
+}
+
+function preguntarM() {
+  if (!currentResultadoM) return;
+  const contexto = document.getElementById('contexto')?.value || '';
+  const pregunta = document.getElementById('pregunta')?.value || '';
+  const payload = armarPayloadMuestral(currentModuloM, currentParametrosM, currentResultadoM, contexto, pregunta);
+  const respuesta = generarRespuestaMuestral(payload);
+  const box = document.getElementById('respuesta-box');
+  box.textContent = respuesta;
+  box.classList.add('visible');
+  if (window.gtag) { gtag('event', 'pregunta_dist_muestrales', { herramienta: 'distribuciones_muestrales' }); }
+}
+</script>
+<article class="edu-pro" id="guia-educativa">
+<h2>Distribuciones muestrales y teorema del límite central</h2>
+<h3>¿Qué es una distribución muestral?</h3>
+<p>Si tomaras muchas muestras del mismo tamaño de una población y calcularas la media de cada una, esas medias formarían una distribución: la <strong>distribución muestral de la media</strong>. Lo mismo ocurre con la proporción u otros estadísticos. Es la idea que conecta una muestra con la población y fundamenta los intervalos de confianza y las pruebas de hipótesis.</p>
+<h3>Error estándar: cuánto varía el promedio</h3>
+<p>La desviación estándar de la distribución muestral se llama <strong>error estándar</strong>. Para la media es σ/√n; para una proporción, √(p(1−p)/n). Observa que crece la precisión con la raíz del tamaño de muestra: para reducir el error a la mitad se necesita cuadruplicar n.</p>
+<h3>Teorema del límite central</h3>
+<p>Para muestras suficientemente grandes, la distribución de la media muestral es aproximadamente <strong>normal</strong>, sin importar la forma de la población (siempre que tenga varianza finita). Una guía habitual es n ≥ 30, aunque poblaciones muy asimétricas pueden requerir más. Por eso la distribución normal es tan central en la inferencia.</p>
+<h3>Simulador interactivo</h3>
+<p>Además de calcular probabilidades sobre la media o la proporción muestral, la herramienta incluye un simulador: cambia la población y el tamaño de muestra y observa cómo el histograma de las medias se vuelve más angosto y más parecido a una campana a medida que n aumenta.</p>
+<div class="ejemplo"><h3 style="margin-top:.6rem">Ejemplo resuelto</h3><p>Una población tiene media 100 y desviación estándar 15. Con muestras de n = 36, el error estándar de la media es 15/√36 = 2,5. La probabilidad de que una media muestral supere 105 es P(Z &gt; (105 − 100)/2,5) = P(Z &gt; 2) = 0,0228, es decir, cerca de 2,3 %. Con n = 144 el error estándar baja a 1,25 y esa probabilidad se vuelve prácticamente despreciable.</p></div>
+<h3>Errores frecuentes y buenas prácticas</h3>
+<p>Un error frecuente es confundir la desviación estándar de los datos con el error estándar de la media: la primera describe cuánto varían los individuos; el segundo, cuánto varía el promedio entre muestras, y disminuye con la raíz del tamaño de muestra. Otro es creer que el teorema del límite central "arregla" cualquier muestra: con muestras pequeñas y distribuciones muy asimétricas, o con valores atípicos extremos, la aproximación normal puede ser pobre.</p><p>Como práctica, use el simulador con distribuciones distintas (simétrica, sesgada) y varios tamaños de muestra, y observe cuándo la distribución del promedio se vuelve aproximadamente normal. Eso da una idea intuitiva de cuánto necesita "n" en cada caso.</p>
+<h3>Preguntas frecuentes</h3>
+<details><summary>¿Cuál es la diferencia entre desviación estándar y error estándar?</summary><p>La desviación estándar describe la variabilidad de los datos individuales; el error estándar describe la variabilidad del estadístico (por ejemplo, la media) entre muestras.</p></details>
+<details><summary>¿Qué pasa si la población no es normal?</summary><p>Con n grande, la media muestral sigue siendo aproximadamente normal por el teorema del límite central. Con n pequeño, la forma de la población sí importa.</p></details>
+<details><summary>¿Por qué n ≥ 30?</summary><p>Es una regla práctica, no una ley: con poblaciones casi simétricas bastan menos datos, con muy asimétricas se necesitan más.</p></details>
+<details><summary>¿La distribución muestral es la de mi muestra?</summary><p>No. Tu muestra es una sola realización; la distribución muestral es el comportamiento teórico de todas las muestras posibles.</p></details>
+<p class="edu-meta" style="font-size:12.5px;color:#666;border-top:1px solid #e0e0dc;margin-top:1.2rem;padding-top:.7rem">Última revisión: noviembre de 2026. Conozca <a href="/metodologia/">cómo se construyen y revisan las herramientas</a>, las <a href="/fuentes/">fuentes de referencia</a> y la <a href="/politica-editorial/">política editorial</a>.</p>
+</article>
+
+<div class="hp-footer" role="contentinfo">
+  <strong>Estadilab</strong> — estadística interactiva y gratuita en español para estudiantes, docentes e investigadores.<br>
+  Proyecto independiente de Juan Carlos Gaviria Chaverra, docente ocasional de la Universidad de Antioquia.<br>
+  <a href="/">Inicio</a> · <a href="/acerca-de/">Acerca de</a> · <a href="/metodologia/">Metodología</a> · <a href="/fuentes/">Fuentes</a> · <a href="/politica-editorial/">Política editorial</a> · <a href="/contacto/">Contacto</a> · <a href="/privacidad/">Privacidad</a> · <a href="/terminos/">Términos</a>
+  <small>Herramientas de uso académico y orientativo; no reemplazan el criterio de un docente o de un estadístico. Última revisión del sitio: noviembre de 2026. Proyecto hermano de <a href="https://herramientaspro.com.co" rel="noopener">HerramientasPro Colombia</a>.</small>
+</div>
+</body>
+</html>

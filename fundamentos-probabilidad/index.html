@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fundamentos de Probabilidad | Estadilab</title>
+<meta name="description" content="Calculadora de fundamentos de probabilidad: combinatoria (factorial, permutaciones, combinaciones), probabilidad básica, probabilidad condicional, y Teorema de Bayes generalizado. Gratis, sin registro.">
+<link rel="canonical" href="https://estadilab.com/fundamentos-probabilidad/">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
+    --panel: #1a2340; --border: #2a3a5c;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent4: #00ff9d; --accent3: #ff6b6b;
+    --text: #e8edf8; --text2: #8a9bb8; --text3: #4a5a78;
+    --gold: #ffd700;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  header { position: relative; z-index: 10; padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%); display: flex; align-items: center; gap: 1.2rem; }
+  .logo-icon { width: 46px; height: 46px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+  .header-text h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-text p { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+  nav.breadcrumb { position: relative; z-index: 10; padding: 10px 2rem 0; font-size: 0.78rem; color: var(--text3); }
+  nav.breadcrumb a { color: var(--accent); text-decoration: none; }
+
+  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 240px 1fr; grid-template-rows: auto 1fr; min-height: calc(100vh - 100px); }
+  .sidebar { grid-row: 1 / 3; border-right: 1px solid var(--border); background: var(--bg2); padding: 1.2rem 0.8rem; overflow-y: auto; }
+  .dist-btn { width: 100%; text-align: left; padding: 0.6rem 0.85rem; background: transparent; border: none; border-radius: 6px; color: var(--text2); font-size: 0.82rem; cursor: pointer; margin-bottom: 3px; }
+  .dist-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .dist-btn.active { background: rgba(0,212,255,0.12); color: var(--accent); font-weight: 600; }
+
+  .main-content { padding: 1.4rem 1.8rem; display: flex; flex-direction: column; gap: 1.2rem; }
+  .disclaimer { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); border-left: 3px solid var(--gold); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: #e8d98a; }
+
+  .prueba-header { padding: 1.1rem 1.3rem; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; }
+  .prueba-header h2 { font-size: 1.15rem; margin-bottom: 4px; }
+  .prueba-header .formula { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--accent); background: rgba(0,212,255,0.08); padding: 3px 10px; border-radius: 4px; display: inline-block; }
+  .prueba-header p { font-size: 0.8rem; color: var(--text2); margin-top: 0.5rem; }
+
+  .calc-grid { display: grid; grid-template-columns: 360px 1fr; gap: 1.1rem; align-items: start; }
+  @media (max-width: 900px) { .calc-grid { grid-template-columns: 1fr; } .app { grid-template-columns: 1fr; } .sidebar { grid-row: auto; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.2rem; }
+  .panel h3 { font-size: 0.72rem; font-family: 'Space Mono', monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); margin-bottom: 1rem; }
+
+  .param-group { margin-bottom: 0.85rem; }
+  .param-group label { display: block; font-size: 0.78rem; color: var(--text2); margin-bottom: 0.35rem; }
+  .param-group input, .param-group select { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.82rem; outline: none; }
+  .param-group input:focus, .param-group select:focus { border-color: var(--accent); }
+  .campos-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+  .checkline { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text2); margin-bottom: 0.85rem; }
+  .checkline input { width: 16px; height: 16px; }
+
+  .calc-btn { width: 100%; padding: 0.75rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: 0.4rem; }
+  .error-box { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.78rem; color: #ff4d6d; margin-top: 0.6rem; display: none; }
+
+  .resultado-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem; margin-bottom: 1rem; }
+  .resultado-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem; text-align: center; }
+  .resultado-card .lbl { font-size: 0.62rem; font-family: 'Space Mono', monospace; color: var(--text3); text-transform: uppercase; margin-bottom: 0.4rem; }
+  .resultado-card .val { font-family: 'Space Mono', monospace; font-size: 1.15rem; font-weight: 700; color: var(--accent); }
+
+  .valor-grande { background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.25); border-radius: 12px; padding: 1.2rem; text-align: center; margin-bottom: 1rem; }
+  .valor-grande .num { font-family: 'Space Mono', monospace; font-size: 2rem; font-weight: 700; color: var(--accent4); }
+  .valor-grande .lbl { font-size: 0.72rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+  .conclusion-text { font-size: 0.82rem; color: var(--text2); line-height: 1.6; margin-top: 0.7rem; text-align: left; }
+
+  .hipotesis-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.5rem; align-items: end; margin-bottom: 0.6rem; }
+  .hipotesis-row .param-group { margin-bottom: 0; }
+  .btn-quitar { background: rgba(255,107,107,0.15); border: 1px solid rgba(255,107,107,0.3); color: var(--accent3); border-radius: 6px; padding: 0.5rem 0.7rem; cursor: pointer; font-size: 0.8rem; }
+  .btn-agregar { background: var(--bg3); border: 1px dashed var(--border); color: var(--text2); border-radius: 8px; padding: 0.5rem; width: 100%; cursor: pointer; font-size: 0.8rem; margin-bottom: 0.9rem; }
+  .btn-agregar:hover { border-color: var(--accent); color: var(--accent); }
+
+  table.bayes-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 0.5rem; }
+  table.bayes-table th { font-size: 0.65rem; text-transform: uppercase; color: var(--text3); padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+  table.bayes-table td { padding: 6px 8px; border-bottom: 1px solid rgba(42,58,92,0.5); font-family: 'Space Mono', monospace; }
+  table.bayes-table tr.mejor td { background: rgba(0,255,157,0.08); color: var(--accent4); font-weight: 600; }
+
+  .context-panel { grid-column: 1 / -1; }
+  .context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 900px) { .context-grid { grid-template-columns: 1fr; } }
+  .param-group textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.82rem; outline: none; }
+  .pregunta-row { display: flex; gap: 0.6rem; margin-top: 0.6rem; }
+  .pregunta-row input { flex: 1; }
+  .pregunta-row button { width: auto; padding: 0.55rem 1.1rem; white-space: nowrap; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; }
+  .sugerencias { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .sugerencia-chip { font-size: 0.7rem; padding: 0.3rem 0.65rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; color: var(--text2); cursor: pointer; }
+  .sugerencia-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .respuesta-box { margin-top: 0.9rem; background: var(--bg3); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 8px; padding: 0.9rem 1rem; font-size: 0.85rem; color: var(--text); line-height: 1.6; display: none; }
+  .respuesta-box.visible { display: block; }
+  .ia-note { font-size: 0.68rem; color: var(--text3); margin-top: 0.5rem; font-style: italic; }
+
+  .welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; text-align: center; gap: 0.8rem; }
+  .welcome .welcome-icon { font-size: 3rem; opacity: 0.5; }
+  .welcome h2 { font-size: 1.3rem; color: var(--text2); font-weight: 400; }
+  .welcome p { font-size: 13.5px; color: var(--text3); max-width: 420px; }
+</style>
+<style id="edu-pro-css">
+.edu-pro{position:relative;z-index:5;max-width:960px;margin:2.5rem auto 0;padding:1.8rem 2rem 3rem;color:var(--text2,#8a9bb8);line-height:1.75;font-size:.95rem;border-top:1px solid var(--border,#2a3a5c)}
+.edu-pro h2{color:var(--text,#e8edf8);font-size:1.35rem;margin:0 0 .8rem}
+.edu-pro h3{color:var(--accent,#00d4ff);font-size:1.02rem;margin:1.4rem 0 .4rem}
+.edu-pro p,.edu-pro ul{margin:0 0 .8rem}.edu-pro ul{padding-left:1.3rem}.edu-pro li{margin-bottom:.35rem}
+.edu-pro strong{color:var(--text,#e8edf8)}.edu-pro code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.85em}
+.edu-pro details{background:var(--panel,#1a2340);border:1px solid var(--border,#2a3a5c);border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem}
+.edu-pro summary{cursor:pointer;color:var(--text,#e8edf8);font-weight:600}.edu-pro details p{margin:.5rem 0 0}
+.edu-pro .ejemplo{background:rgba(0,212,255,.06);border-left:3px solid var(--accent,#00d4ff);padding:.2rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+@media(max-width:700px){.edu-pro{padding:1.4rem 1rem 2.5rem}}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cuál es la diferencia entre permutación y combinación?", "acceptedAnswer": {"@type": "Answer", "text": "En la permutación importa el orden (podios, claves); en la combinación no (comités, manos de cartas)."}}, {"@type": "Question", "name": "¿Qué significa que dos eventos sean independientes?", "acceptedAnswer": {"@type": "Answer", "text": "Que P(A∩B) = P(A)·P(B); la ocurrencia de uno no modifica la probabilidad del otro."}}, {"@type": "Question", "name": "¿Eventos mutuamente excluyentes son independientes?", "acceptedAnswer": {"@type": "Answer", "text": "No. Si son excluyentes y tienen probabilidad positiva, saber que uno ocurrió implica que el otro no, así que son dependientes."}}, {"@type": "Question", "name": "¿Para qué sirve Bayes en la práctica?", "acceptedAnswer": {"@type": "Answer", "text": "Para calcular, por ejemplo, la probabilidad de tener una enfermedad dado un resultado positivo, combinando la prevalencia con la sensibilidad y especificidad de la prueba."}}]}</script>
+<style id="hp-footer-css">
+.hp-footer{margin:2.5rem 0 0;padding:1.5rem 1rem 2rem;border-top:1px solid rgba(128,128,128,.35);text-align:center;font:13px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:inherit;opacity:.9}
+.hp-footer a{color:inherit;text-decoration:underline;margin:0 .35rem}
+.hp-footer small{display:block;margin-top:.4rem;opacity:.8;font-size:11.5px}
+</style>
+<style id="hp-mobile-fix">
+/* Móvil: evita que tablas y resultados ensanchen la página (min-width:auto de los ítems de grid) */
+@media (max-width: 900px){.app>*,.layout>*,.main-content,.calc-grid>*,.panel{min-width:0;max-width:100%}.panel table,.main-content table{display:block;overflow-x:auto;max-width:100%}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">Ω</div>
+  <div class="header-text">
+    <h1>Fundamentos de Probabilidad</h1>
+    <p>Estadilab · Piloto académico</p>
+  </div>
+</header>
+
+<nav class="breadcrumb"><a href="/">Estadilab</a> › Fundamentos de Probabilidad</nav>
+
+<div class="app">
+  <aside class="sidebar">
+    <button class="dist-btn" onclick="loadModulo('combinatoria', this)">🔢 Combinatoria</button>
+    <button class="dist-btn" onclick="loadModulo('basica', this)">∪ Probabilidad básica</button>
+    <button class="dist-btn" onclick="loadModulo('condicional', this)">| Probabilidad condicional</button>
+    <button class="dist-btn" onclick="loadModulo('bayes', this)">🧠 Teorema de Bayes</button>
+  </aside>
+
+  <main class="main-content" id="main-content">
+    <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-icon">🎲</div>
+      <h2>Selecciona un módulo</h2>
+      <p>Combinatoria, probabilidad básica, condicional, o Teorema de Bayes con cualquier número de hipótesis.</p>
+    </div>
+  </main>
+</div>
+
+<script src="js/motor-probabilidad.js"></script>
+<script src="js/interpretacion-probabilidad.js"></script>
+<script>
+let currentModulo = null;
+let currentResultadoProb = null;
+let currentParametrosProb = null;
+let numHipotesisBayes = 2;
+
+function loadModulo(id, btn) {
+  currentModulo = id;
+  document.querySelectorAll('.dist-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const main = document.getElementById('main-content');
+
+  let bodyHTML = '';
+  if (id === 'combinatoria') {
+    bodyHTML = renderCombinatoria();
+  } else if (id === 'basica') {
+    bodyHTML = renderBasica();
+  } else if (id === 'condicional') {
+    bodyHTML = renderCondicional();
+  } else if (id === 'bayes') {
+    numHipotesisBayes = 2;
+    bodyHTML = renderBayes();
+  }
+
+  main.innerHTML = `
+    <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+    ${bodyHTML}
+    <div class="context-panel panel">
+      <h3>💬 Contexto de tu análisis y preguntas</h3>
+      <div class="context-grid">
+        <div class="param-group">
+          <label>Describe el problema que estás resolviendo (opcional)</label>
+          <textarea id="contexto" rows="3" placeholder="Ej: Probabilidad de que un cliente compre dos productos relacionados."></textarea>
+        </div>
+        <div class="param-group">
+          <label>Pregunta sobre el resultado</label>
+          <div class="pregunta-row">
+            <input type="text" id="pregunta" placeholder="Ej: ¿son independientes?">
+            <button onclick="preguntar()">Preguntar</button>
+          </div>
+          <div class="sugerencias">
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿son independientes?')">Independencia</span>
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿son mutuamente excluyentes?')">Excluyentes</span>
+            <span class="sugerencia-chip" onclick="usarSugerencia('diferencia entre permutación y combinación')">Permutación vs combinación</span>
+            <span class="sugerencia-chip" onclick="usarSugerencia('¿qué significa el prior y el posterior?')">Prior / Posterior</span>
+          </div>
+        </div>
+      </div>
+      <div class="respuesta-box" id="respuesta-box"></div>
+      <div class="ia-note">Hoy esta respuesta se genera con reglas locales, sin costo. En una fase futura se podrá conectar a IA para preguntas más abiertas.</div>
+    </div>
+  `;
+
+  if (id === 'combinatoria') renderCamposCombinatoria();
+  if (id === 'bayes') renderFilasBayes();
+}
+
+// ═══ COMBINATORIA ═══
+function renderCombinatoria() {
+  return `
+    <div class="prueba-header">
+      <h2>Combinatoria</h2>
+      <span class="formula">n! · P(n,r) · C(n,r) · nʳ</span>
+    </div>
+    <div class="calc-grid">
+      <div class="panel">
+        <h3>Tipo de cálculo</h3>
+        <div class="param-group">
+          <label>Selecciona</label>
+          <select id="tipo-combinatoria" onchange="renderCamposCombinatoria()">
+            <option value="factorial">Factorial (n!)</option>
+            <option value="permutaciones" selected>Permutaciones P(n,r) — el orden importa</option>
+            <option value="combinaciones">Combinaciones C(n,r) — el orden NO importa</option>
+            <option value="repeticion">Permutaciones con repetición (nʳ)</option>
+          </select>
+        </div>
+        <div id="campos-combinatoria"></div>
+        <button class="calc-btn" onclick="calcularCombinatoria()">Calcular</button>
+        <div class="error-box" id="error-box"></div>
+      </div>
+      <div class="panel" id="resultados-panel">
+        <div style="text-align:center;color:var(--text3);font-size:0.85rem;padding:2rem;">Completa los datos y presiona <strong style="color:var(--text)">Calcular</strong></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCamposCombinatoria() {
+  const tipo = document.getElementById('tipo-combinatoria')?.value || 'permutaciones';
+  const cont = document.getElementById('campos-combinatoria');
+  if (!cont) return;
+  if (tipo === 'factorial') {
+    cont.innerHTML = `<div class="param-group"><label>n</label><input type="number" id="param-n" value="5" min="0" step="1"></div>`;
+  } else {
+    cont.innerHTML = `<div class="campos-2col">
+      <div class="param-group"><label>n</label><input type="number" id="param-n" value="5" min="0" step="1"></div>
+      <div class="param-group"><label>r</label><input type="number" id="param-r" value="2" min="0" step="1"></div>
+    </div>`;
+  }
+}
+
+function calcularCombinatoria() {
+  const tipo = document.getElementById('tipo-combinatoria').value;
+  const errBox = document.getElementById('error-box');
+  const n = parseInt(document.getElementById('param-n').value);
+  if (isNaN(n) || n < 0) { errBox.textContent = '⚠ n debe ser un entero ≥ 0.'; errBox.style.display = 'block'; return; }
+
+  let valor, formulaTexto;
+  if (tipo === 'factorial') {
+    valor = factorial(n);
+    formulaTexto = `${n}!`;
+  } else {
+    const r = parseInt(document.getElementById('param-r').value);
+    if (isNaN(r) || r < 0) { errBox.textContent = '⚠ r debe ser un entero ≥ 0.'; errBox.style.display = 'block'; return; }
+    if ((tipo === 'permutaciones' || tipo === 'combinaciones') && r > n) {
+      errBox.textContent = '⚠ r no puede ser mayor que n.'; errBox.style.display = 'block'; return;
+    }
+    if (tipo === 'permutaciones') { valor = permutaciones(n, r); formulaTexto = `P(${n},${r})`; }
+    else if (tipo === 'combinaciones') { valor = combinaciones(n, r); formulaTexto = `C(${n},${r})`; }
+    else { valor = permutacionesConRepeticion(n, r); formulaTexto = `${n}^${r}`; }
+  }
+  errBox.style.display = 'none';
+  currentResultadoProb = { valor };
+  currentParametrosProb = { n };
+
+  document.getElementById('resultados-panel').innerHTML = `
+    <h3>Resultado</h3>
+    <div class="valor-grande">
+      <div class="lbl">${formulaTexto} =</div>
+      <div class="num">${valor.toLocaleString('es-CO')}</div>
+    </div>
+  `;
+  const rb = document.getElementById('respuesta-box'); if (rb) rb.classList.remove('visible');
+}
+
+// ═══ PROBABILIDAD BÁSICA ═══
+function renderBasica() {
+  return `
+    <div class="prueba-header">
+      <h2>Probabilidad básica</h2>
+      <span class="formula">P(A∪B) = P(A) + P(B) − P(A∩B)</span>
+    </div>
+    <div class="calc-grid">
+      <div class="panel">
+        <h3>Datos</h3>
+        <div class="campos-2col">
+          <div class="param-group"><label>P(A)</label><input type="number" id="param-pa" value="0.3" min="0" max="1" step="any"></div>
+          <div class="param-group"><label>P(B)</label><input type="number" id="param-pb" value="0.4" min="0" max="1" step="any"></div>
+        </div>
+        <div class="checkline">
+          <input type="checkbox" id="param-independientes" checked onchange="toggleInterseccion()">
+          <label for="param-independientes" style="margin:0;">A y B son independientes (calcula P(A∩B) automáticamente)</label>
+        </div>
+        <div class="param-group" id="grupo-interseccion" style="display:none;">
+          <label>P(A∩B) — dato conocido</label>
+          <input type="number" id="param-interseccion" value="0.1" min="0" max="1" step="any">
+        </div>
+        <button class="calc-btn" onclick="calcularBasica()">Calcular</button>
+        <div class="error-box" id="error-box"></div>
+      </div>
+      <div class="panel" id="resultados-panel">
+        <div style="text-align:center;color:var(--text3);font-size:0.85rem;padding:2rem;">Completa los datos y presiona <strong style="color:var(--text)">Calcular</strong></div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleInterseccion() {
+  const independientes = document.getElementById('param-independientes').checked;
+  document.getElementById('grupo-interseccion').style.display = independientes ? 'none' : 'block';
+}
+
+function calcularBasica() {
+  const errBox = document.getElementById('error-box');
+  const pa = parseFloat(document.getElementById('param-pa').value);
+  const pb = parseFloat(document.getElementById('param-pb').value);
+  const independientes = document.getElementById('param-independientes').checked;
+  const interseccion = independientes ? null : parseFloat(document.getElementById('param-interseccion').value);
+
+  if ([pa, pb].some(v => isNaN(v) || v < 0 || v > 1)) { errBox.textContent = '⚠ Las probabilidades deben estar entre 0 y 1.'; errBox.style.display = 'block'; return; }
+  if (!independientes && (isNaN(interseccion) || interseccion < 0 || interseccion > 1)) { errBox.textContent = '⚠ P(A∩B) debe estar entre 0 y 1.'; errBox.style.display = 'block'; return; }
+  errBox.style.display = 'none';
+
+  const params = { pa, pb, interseccion, independientes };
+  const r = probabilidadBasica(params);
+  currentResultadoProb = r;
+  currentParametrosProb = params;
+
+  document.getElementById('resultados-panel').innerHTML = `
+    <h3>Resultado</h3>
+    <div class="resultado-grid">
+      <div class="resultado-card"><div class="lbl">P(A∩B)</div><div class="val">${r.paib.toFixed(4)}</div></div>
+      <div class="resultado-card"><div class="lbl">P(A∪B)</div><div class="val">${r.union.toFixed(4)}</div></div>
+      <div class="resultado-card"><div class="lbl">P(A')</div><div class="val">${r.complementoA.toFixed(4)}</div></div>
+      <div class="resultado-card"><div class="lbl">P(B')</div><div class="val">${r.complementoB.toFixed(4)}</div></div>
+    </div>
+    <div class="valor-grande">
+      <div class="conclusion-text">${generarResumenProb(armarPayloadProb('basica', params, r, '', ''))}</div>
+    </div>
+  `;
+  const rb = document.getElementById('respuesta-box'); if (rb) rb.classList.remove('visible');
+}
+
+// ═══ PROBABILIDAD CONDICIONAL ═══
+function renderCondicional() {
+  return `
+    <div class="prueba-header">
+      <h2>Probabilidad condicional</h2>
+      <span class="formula">P(A|B) = P(A∩B) / P(B)</span>
+    </div>
+    <div class="calc-grid">
+      <div class="panel">
+        <h3>Datos</h3>
+        <div class="param-group"><label>P(A∩B)</label><input type="number" id="param-paib" value="0.12" min="0" max="1" step="any"></div>
+        <div class="param-group"><label>P(B)</label><input type="number" id="param-pb" value="0.4" min="0" max="1" step="any"></div>
+        <div class="param-group"><label>P(A) — opcional, para comparar independencia</label><input type="number" id="param-pa" value="0.3" min="0" max="1" step="any"></div>
+        <button class="calc-btn" onclick="calcularCondicional()">Calcular</button>
+        <div class="error-box" id="error-box"></div>
+      </div>
+      <div class="panel" id="resultados-panel">
+        <div style="text-align:center;color:var(--text3);font-size:0.85rem;padding:2rem;">Completa los datos y presiona <strong style="color:var(--text)">Calcular</strong></div>
+      </div>
+    </div>
+  `;
+}
+
+function calcularCondicional() {
+  const errBox = document.getElementById('error-box');
+  const paib = parseFloat(document.getElementById('param-paib').value);
+  const pb = parseFloat(document.getElementById('param-pb').value);
+  const paRaw = document.getElementById('param-pa').value;
+  const pa = paRaw === '' ? undefined : parseFloat(paRaw);
+
+  if (isNaN(paib) || paib < 0 || paib > 1) { errBox.textContent = '⚠ P(A∩B) debe estar entre 0 y 1.'; errBox.style.display = 'block'; return; }
+  if (isNaN(pb) || pb <= 0 || pb > 1) { errBox.textContent = '⚠ P(B) debe estar entre 0 (exclusivo) y 1.'; errBox.style.display = 'block'; return; }
+  if (paib > pb) { errBox.textContent = '⚠ P(A∩B) no puede ser mayor que P(B).'; errBox.style.display = 'block'; return; }
+  errBox.style.display = 'none';
+
+  const params = { paib, pb, pa };
+  const r = probabilidadCondicional(params);
+  currentResultadoProb = r;
+  currentParametrosProb = params;
+
+  document.getElementById('resultados-panel').innerHTML = `
+    <h3>Resultado</h3>
+    <div class="valor-grande">
+      <div class="lbl">P(A|B) =</div>
+      <div class="num">${r.paDadoB.toFixed(4)}</div>
+      <div class="conclusion-text">${generarResumenProb(armarPayloadProb('condicional', params, r, '', ''))}</div>
+    </div>
+  `;
+  const rb = document.getElementById('respuesta-box'); if (rb) rb.classList.remove('visible');
+}
+
+// ═══ TEOREMA DE BAYES ═══
+function renderBayes() {
+  return `
+    <div class="prueba-header">
+      <h2>Teorema de Bayes</h2>
+      <span class="formula">P(Hᵢ|E) = P(E|Hᵢ)·P(Hᵢ) / Σⱼ P(E|Hⱼ)·P(Hⱼ)</span>
+      <p>Funciona con 2 o más hipótesis mutuamente excluyentes. Ingresa la probabilidad previa (prior) y la verosimilitud P(evidencia | hipótesis) de cada una.</p>
+    </div>
+    <div class="calc-grid">
+      <div class="panel">
+        <h3>Hipótesis</h3>
+        <div id="filas-bayes"></div>
+        <button class="btn-agregar" onclick="agregarHipotesis()">+ Agregar otra hipótesis</button>
+        <button class="calc-btn" onclick="calcularBayes()">Calcular</button>
+        <div class="error-box" id="error-box"></div>
+      </div>
+      <div class="panel" id="resultados-panel">
+        <div style="text-align:center;color:var(--text3);font-size:0.85rem;padding:2rem;">Completa los datos y presiona <strong style="color:var(--text)">Calcular</strong></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderFilasBayes() {
+  const cont = document.getElementById('filas-bayes');
+  if (!cont) return;
+  let html = '';
+  const defaults = [{prior:0.01, like:0.99}, {prior:0.99, like:0.05}, {prior:0.1, like:0.5}];
+  for (let i = 0; i < numHipotesisBayes; i++) {
+    const d = defaults[i] || {prior:0.1, like:0.5};
+    html += `
+      <div class="hipotesis-row" data-idx="${i}">
+        <div class="param-group"><label>P(H${i+1}) prior</label><input type="number" id="bayes-prior-${i}" value="${d.prior}" min="0" max="1" step="any"></div>
+        <div class="param-group"><label>P(E|H${i+1})</label><input type="number" id="bayes-like-${i}" value="${d.like}" min="0" max="1" step="any"></div>
+        ${numHipotesisBayes > 2 ? `<button class="btn-quitar" onclick="quitarHipotesis(${i})">✕</button>` : '<span></span>'}
+      </div>
+    `;
+  }
+  cont.innerHTML = html;
+}
+
+function agregarHipotesis() {
+  numHipotesisBayes++;
+  renderFilasBayes();
+}
+
+function quitarHipotesis(idx) {
+  numHipotesisBayes--;
+  renderFilasBayes();
+}
+
+function calcularBayes() {
+  const errBox = document.getElementById('error-box');
+  const priors = [], likelihoods = [];
+  for (let i = 0; i < numHipotesisBayes; i++) {
+    const p = parseFloat(document.getElementById(`bayes-prior-${i}`).value);
+    const l = parseFloat(document.getElementById(`bayes-like-${i}`).value);
+    if (isNaN(p) || p < 0 || p > 1 || isNaN(l) || l < 0 || l > 1) {
+      errBox.textContent = `⚠ Revisa los valores de la hipótesis H${i+1} (deben estar entre 0 y 1).`;
+      errBox.style.display = 'block';
+      return;
+    }
+    priors.push(p); likelihoods.push(l);
+  }
+  const sumaPriors = priors.reduce((a,b)=>a+b,0);
+  if (Math.abs(sumaPriors - 1) > 0.01) {
+    errBox.textContent = `⚠ Las probabilidades previas (priors) deben sumar 1. Actualmente suman ${sumaPriors.toFixed(4)}.`;
+    errBox.style.display = 'block';
+    return;
+  }
+  errBox.style.display = 'none';
+
+  const params = { priors, likelihoods };
+  const r = teoremaBayes(params);
+  currentResultadoProb = r;
+  currentParametrosProb = params;
+
+  const idxMejor = r.posteriores.indexOf(Math.max(...r.posteriores));
+  let filas = '';
+  for (let i = 0; i < priors.length; i++) {
+    filas += `<tr class="${i === idxMejor ? 'mejor' : ''}"><td>H${i+1}</td><td>${priors[i].toFixed(4)}</td><td>${likelihoods[i].toFixed(4)}</td><td>${r.posteriores[i].toFixed(4)}</td></tr>`;
+  }
+
+  document.getElementById('resultados-panel').innerHTML = `
+    <h3>Resultado</h3>
+    <div class="valor-grande">
+      <div class="lbl">P(Evidencia) total</div>
+      <div class="num" style="font-size:1.4rem;">${r.pE.toFixed(4)}</div>
+    </div>
+    <table class="bayes-table">
+      <thead><tr><th>Hipótesis</th><th>Prior</th><th>P(E|H)</th><th>Posterior P(H|E)</th></tr></thead>
+      <tbody>${filas}</tbody>
+    </table>
+    <div class="conclusion-text">${generarResumenProb(armarPayloadProb('bayes', params, r, '', ''))}</div>
+  `;
+  const rb = document.getElementById('respuesta-box'); if (rb) rb.classList.remove('visible');
+}
+
+// ═══ CONTEXTO / PREGUNTAS (compartido) ═══
+function usarSugerencia(texto) {
+  document.getElementById('pregunta').value = texto;
+  preguntar();
+}
+
+function preguntar() {
+  if (!currentResultadoProb) return;
+  const contexto = document.getElementById('contexto')?.value || '';
+  const pregunta = document.getElementById('pregunta')?.value || '';
+  const payload = armarPayloadProb(currentModulo, currentParametrosProb, currentResultadoProb, contexto, pregunta);
+  const respuesta = generarRespuestaProb(payload);
+  const box = document.getElementById('respuesta-box');
+  box.textContent = respuesta;
+  box.classList.add('visible');
+  if (window.gtag) { gtag('event', 'pregunta_fundamentos_prob', { herramienta: 'fundamentos_probabilidad' }); }
+}
+</script>
+<article class="edu-pro" id="guia-educativa">
+<h2>Fundamentos de probabilidad y combinatoria</h2>
+<h3>La probabilidad como medida de incertidumbre</h3>
+<p>La probabilidad de un evento es un número entre 0 y 1 que mide qué tan posible es que ocurra. Si todos los resultados son igualmente probables, se calcula como casos favorables ÷ casos posibles. Sus reglas básicas: la probabilidad del espacio muestral es 1, y la de la unión de eventos disjuntos es la suma de sus probabilidades.</p>
+<h3>Combinatoria: contar sin enumerar</h3>
+<ul><li><strong>Factorial (n!):</strong> formas de ordenar n elementos distintos.</li><li><strong>Permutaciones:</strong> arreglos donde el orden importa, nPr = n!/(n−r)!.</li><li><strong>Combinaciones:</strong> selecciones donde el orden no importa, nCr = n!/(r!(n−r)!).</li></ul><p>La pregunta clave: ¿cambia el resultado si cambio el orden? Si sí, permutación; si no, combinación.</p>
+<h3>Probabilidad condicional y teorema de Bayes</h3>
+<p>P(A|B) es la probabilidad de A sabiendo que B ocurrió: P(A∩B)/P(B). Dos eventos son <strong>independientes</strong> si saber que uno ocurrió no cambia la probabilidad del otro. El <strong>teorema de Bayes</strong> permite invertir condicionales y actualizar creencias con nueva evidencia: es la base de pruebas diagnósticas, filtros de correo y muchos modelos de decisión.</p>
+<h3>Cómo usar la herramienta</h3>
+<p>Selecciona el módulo (combinatoria, probabilidad de eventos, condicional o Bayes), ingresa los datos y obtén el resultado con el procedimiento. Recomendamos resolver primero a mano y usar la calculadora para verificar.</p>
+<div class="ejemplo"><h3 style="margin-top:.6rem">Ejemplo resuelto</h3><p>De un grupo de 10 personas se elige un comité de 3: hay C(10,3) = 120 comités posibles (el orden no importa); pero si se asignan presidente, secretario y tesorero, hay P(10,3) = 720 formas. Con Bayes: una enfermedad tiene prevalencia de 1 %, la prueba detecta al 95 % de los enfermos (sensibilidad) y da negativo en el 90 % de los sanos (especificidad). Si el resultado es positivo, la probabilidad de estar enfermo es 0,0095/(0,0095 + 0,099) ≈ 8,8 %: con una enfermedad poco frecuente, la mayoría de los positivos son falsos positivos.</p></div>
+<h3>Errores frecuentes y buenas prácticas</h3>
+<ul><li><strong>Confundir permutaciones y combinaciones.</strong> Si el orden importa, son permutaciones; si no, combinaciones. Pregúntese: ¿cambiar el orden produce un resultado distinto?</li><li><strong>Sucesos independientes y excluyentes no son lo mismo.</strong> Dos sucesos excluyentes con probabilidad positiva son dependientes, porque si ocurre uno el otro no puede ocurrir.</li><li><strong>Falacia de la tasa base.</strong> En Bayes, ignorar la prevalencia lleva a sobreestimar la probabilidad tras una prueba positiva.</li><li><strong>Verifique que sumen 1.</strong> Las probabilidades de todos los resultados posibles deben sumar 1; es la comprobación más rápida de un planteamiento.</li></ul>
+<h3>Preguntas frecuentes</h3>
+<details><summary>¿Cuál es la diferencia entre permutación y combinación?</summary><p>En la permutación importa el orden (podios, claves); en la combinación no (comités, manos de cartas).</p></details>
+<details><summary>¿Qué significa que dos eventos sean independientes?</summary><p>Que P(A∩B) = P(A)·P(B); la ocurrencia de uno no modifica la probabilidad del otro.</p></details>
+<details><summary>¿Eventos mutuamente excluyentes son independientes?</summary><p>No. Si son excluyentes y tienen probabilidad positiva, saber que uno ocurrió implica que el otro no, así que son dependientes.</p></details>
+<details><summary>¿Para qué sirve Bayes en la práctica?</summary><p>Para calcular, por ejemplo, la probabilidad de tener una enfermedad dado un resultado positivo, combinando la prevalencia con la sensibilidad y especificidad de la prueba.</p></details>
+<p class="edu-meta" style="font-size:12.5px;color:#666;border-top:1px solid #e0e0dc;margin-top:1.2rem;padding-top:.7rem">Última revisión: noviembre de 2026. Conozca <a href="/metodologia/">cómo se construyen y revisan las herramientas</a>, las <a href="/fuentes/">fuentes de referencia</a> y la <a href="/politica-editorial/">política editorial</a>.</p>
+</article>
+
+<div class="hp-footer" role="contentinfo">
+  <strong>Estadilab</strong> — estadística interactiva y gratuita en español para estudiantes, docentes e investigadores.<br>
+  Proyecto independiente de Juan Carlos Gaviria Chaverra, docente ocasional de la Universidad de Antioquia.<br>
+  <a href="/">Inicio</a> · <a href="/acerca-de/">Acerca de</a> · <a href="/metodologia/">Metodología</a> · <a href="/fuentes/">Fuentes</a> · <a href="/politica-editorial/">Política editorial</a> · <a href="/contacto/">Contacto</a> · <a href="/privacidad/">Privacidad</a> · <a href="/terminos/">Términos</a>
+  <small>Herramientas de uso académico y orientativo; no reemplazan el criterio de un docente o de un estadístico. Última revisión del sitio: noviembre de 2026. Proyecto hermano de <a href="https://herramientaspro.com.co" rel="noopener">HerramientasPro Colombia</a>.</small>
+</div>
+</body>
+</html>
