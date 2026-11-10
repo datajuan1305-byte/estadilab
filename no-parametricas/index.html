@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pruebas no paramétricas en línea: Mann-Whitney, Wilcoxon, Kruskal-Wallis, Friedman y más | Estadilab</title>
+<meta name="description" content="Calculadora gratuita de 16 pruebas no paramétricas con valor p exacto, tamaño del efecto, post hoc, interpretación y código en R y Python: Mann-Whitney, Wilcoxon, Kruskal-Wallis, Friedman, Kolmogorov-Smirnov y más.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://estadilab.com/no-parametricas/">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Estadilab"><meta property="og:title" content="Pruebas no paramétricas en línea: Mann-Whitney, Wilcoxon, Kruskal-Wallis, Friedman y más | Estadilab"><meta property="og:description" content="Calculadora gratuita de 16 pruebas no paramétricas con valor p exacto, tamaño del efecto, post hoc, interpretación y código en R y Python: Mann-Whitney, Wilcoxon, Kruskal-Wallis, Friedman, Kolmogorov-Smirnov y más."><meta property="og:url" content="https://estadilab.com/no-parametricas/"><meta property="og:image" content="https://estadilab.com/assets/og-estadilab.jpg"><meta name="twitter:card" content="summary_large_image">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
+    --panel: #1a2340; --border: #2a3a5c;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent4: #00ff9d; --accent3: #ff6b6b;
+    --text: #e8edf8; --text2: #8a9bb8; --text3: #4a5a78;
+    --gold: #ffd700;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  header { position: relative; z-index: 10; padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%); display: flex; align-items: center; gap: 1.2rem; }
+  .logo-icon { width: 46px; height: 46px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+  .header-text h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-text p { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+  nav.breadcrumb { position: relative; z-index: 10; padding: 10px 2rem 0; font-size: 0.78rem; color: var(--text3); }
+  nav.breadcrumb a { color: var(--accent); text-decoration: none; }
+  main { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 1.4rem 2rem 3rem; display: flex; flex-direction: column; gap: 1.2rem; }
+  .disclaimer { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); border-left: 3px solid var(--gold); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: #e8d98a; }
+
+  .layout { display: grid; grid-template-columns: 380px 1fr; gap: 1.2rem; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.2rem; }
+  .panel h3 { font-size: 0.72rem; font-family: 'Space Mono', monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); margin-bottom: 1rem; }
+
+  .archivo-drop { display: block; border: 1.5px dashed var(--border); border-radius: 10px; padding: 0.8rem 1rem; text-align: center; cursor: pointer; margin-bottom: 0.8rem; }
+  .archivo-drop:hover { border-color: var(--accent); background: rgba(0,212,255,0.04); }
+  .archivo-drop strong { display: block; font-size: 0.82rem; color: var(--text); margin: 0.15rem 0; }
+  .archivo-drop span { font-size: 0.68rem; color: var(--text3); }
+  .archivo-info { font-size: 0.72rem; color: var(--accent4); margin: -0.3rem 0 0.6rem; display: none; }
+  .archivo-info.visible { display: block; }
+  .query-separator { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); text-align: center; margin: 0.7rem 0 0.6rem; }
+
+  .campos-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+  .param-group { margin-bottom: 0.85rem; }
+  .param-group label { display: block; font-size: 0.78rem; color: var(--text2); margin-bottom: 0.35rem; }
+  .param-group input, .param-group textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.82rem; outline: none; }
+  .param-group input:focus, .param-group textarea:focus { border-color: var(--accent); }
+  .param-group textarea { min-height: 90px; resize: vertical; }
+
+  .calc-btn { width: 100%; padding: 0.75rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: 0.4rem; }
+  .error-box { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.78rem; color: #ff4d6d; margin-top: 0.6rem; display: none; }
+
+  .coef-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-bottom: 1rem; }
+  .coef-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center; }
+  .coef-card.principal { border-color: var(--accent); background: rgba(0,212,255,0.06); }
+  .coef-card .nombre { font-size: 0.68rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.4rem; }
+  .coef-card .valor { font-family: 'Space Mono', monospace; font-size: 1.3rem; font-weight: 700; color: var(--accent); }
+  .coef-card .pval { font-size: 0.65rem; color: var(--text3); margin-top: 0.3rem; }
+
+  .chart-container { position: relative; height: 260px; margin-bottom: 1rem; }
+  .conclusion-text { font-size: 0.85rem; color: var(--text2); line-height: 1.6; }
+  .sin-resultado { text-align: center; color: var(--text3); font-size: 0.85rem; padding: 2rem; }
+
+  .context-panel { grid-column: 1 / -1; }
+  .context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 900px) { .context-grid { grid-template-columns: 1fr; } }
+  .pregunta-row { display: flex; gap: 0.6rem; margin-top: 0.6rem; }
+  .pregunta-row input { flex: 1; }
+  .pregunta-row button { width: auto; padding: 0.55rem 1.1rem; white-space: nowrap; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; }
+  .sugerencias { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .sugerencia-chip { font-size: 0.7rem; padding: 0.3rem 0.65rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; color: var(--text2); cursor: pointer; }
+  .sugerencia-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .respuesta-box { margin-top: 0.9rem; background: var(--bg3); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 8px; padding: 0.9rem 1rem; font-size: 0.85rem; color: var(--text); line-height: 1.6; display: none; }
+  .respuesta-box.visible { display: block; }
+  .ia-note { font-size: 0.68rem; color: var(--text3); margin-top: 0.5rem; font-style: italic; }
+</style>
+<style id="edu-pro-css">
+.edu-pro{position:relative;z-index:5;max-width:960px;margin:2.5rem auto 0;padding:1.8rem 2rem 3rem;color:var(--text2,#8a9bb8);line-height:1.75;font-size:.95rem;border-top:1px solid var(--border,#2a3a5c)}
+.edu-pro h2{color:var(--text,#e8edf8);font-size:1.35rem;margin:0 0 .8rem}
+.edu-pro h3{color:var(--accent,#00d4ff);font-size:1.02rem;margin:1.4rem 0 .4rem}
+.edu-pro p,.edu-pro ul{margin:0 0 .8rem}.edu-pro ul{padding-left:1.3rem}.edu-pro li{margin-bottom:.35rem}
+.edu-pro strong{color:var(--text,#e8edf8)}.edu-pro code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.85em}
+.edu-pro details{background:var(--panel,#1a2340);border:1px solid var(--border,#2a3a5c);border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem}
+.edu-pro summary{cursor:pointer;color:var(--text,#e8edf8);font-weight:600}.edu-pro details p{margin:.5rem 0 0}
+.edu-pro .ejemplo{background:rgba(0,212,255,.06);border-left:3px solid var(--accent,#00d4ff);padding:.2rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+@media(max-width:700px){.edu-pro{padding:1.4rem 1rem 2.5rem}}
+</style>
+<style id="hp-footer-css">
+.hp-footer{margin:2.5rem 0 0;padding:1.5rem 1rem 2rem;border-top:1px solid rgba(128,128,128,.35);text-align:center;font:13px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:inherit;opacity:.9}
+.hp-footer a{color:inherit;text-decoration:underline;margin:0 .35rem}
+.hp-footer small{display:block;margin-top:.4rem;opacity:.8;font-size:11.5px}
+</style>
+<style id="hp-mobile-fix">
+/* Móvil: evita que tablas y resultados ensanchen la página (min-width:auto de los ítems de grid) */
+@media (max-width: 900px){.app>*,.layout>*,.main-content,.calc-grid>*,.panel{min-width:0;max-width:100%}.panel table,.main-content table{display:block;overflow-x:auto;max-width:100%}}
+@media (max-width: 600px){.coef-grid{grid-template-columns:1fr}}
+</style>
+<style id="np-css">
+.logo-icon{text-decoration:none;color:#0a0e1a;font-weight:700}header a.home{display:flex;align-items:center;gap:1.2rem;text-decoration:none;color:inherit}
+.np-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:.55rem}
+.np-tab{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:.15rem;text-align:left;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:.7rem .85rem;color:var(--text);font-family:inherit;cursor:pointer;transition:border-color .15s,transform .15s}
+.np-tab:hover{border-color:var(--accent)}
+.np-tab.on{border-color:var(--accent);background:linear-gradient(160deg,rgba(0,212,255,.12),rgba(123,97,255,.1))}
+.np-tab .num{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--accent);letter-spacing:.08em}
+.np-tab .nm{font-size:.86rem;font-weight:600;line-height:1.25}
+.np-tab .cnt{font-size:.68rem;color:var(--text3)}
+.np-tab.pronto{opacity:.6}.np-tab .soon{font-size:.66rem;color:var(--gold);font-family:'Space Mono',monospace}
+.np-tabdesc{font-size:.84rem;color:var(--text2);margin:.1rem 0 0}
+.np-chips{display:flex;flex-wrap:wrap;gap:.5rem}
+.np-chip{background:var(--bg3);border:1px solid var(--border);border-radius:999px;padding:.45rem .95rem;font-family:inherit;font-size:.82rem;color:var(--text2);cursor:pointer}
+.np-chip:hover{border-color:var(--accent);color:var(--text)}.np-chip.on{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#0a0e1a;font-weight:600}
+.np-info h2{font-size:1.1rem;color:var(--text);margin-bottom:.4rem}.np-info p{font-size:.85rem;color:var(--text2);line-height:1.6;margin-bottom:.4rem}
+.np-info .dt{font-size:.8rem}.np-info details{margin-top:.4rem}.np-info summary,.det summary{cursor:pointer;font-size:.8rem;color:var(--accent)}.np-info ul{margin:.4rem 0 0 1.1rem;font-size:.8rem;color:var(--text2);line-height:1.6}
+.np-bar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.np-bar .calc-btn{flex:1 1 150px;margin-top:0}.np-sec{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:.65rem .9rem;color:var(--text2);font-family:inherit;font-size:.82rem;cursor:pointer}.np-sec:hover{border-color:var(--accent);color:var(--text)}
+.param-group select,.param-group input[type=number],.param-group input[type=text]{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;color:var(--text);font-family:'Space Mono',monospace;font-size:.82rem;outline:none}
+.param-group select:focus,.param-group input:focus{border-color:var(--accent)}
+.param-group .hint,.hint{font-size:.7rem;color:var(--text3);margin-top:.3rem;line-height:1.45}
+.np-alpha{display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:var(--text2)}.np-alpha select{width:auto;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.35rem .5rem;color:var(--text);font-family:'Space Mono',monospace}
+.hipo{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:.7rem .9rem;margin-bottom:.9rem;font-size:.82rem;color:var(--text2);line-height:1.55}.hipo b{color:var(--accent)}.hipo .al{font-size:.72rem;color:var(--text3);margin-top:.3rem}
+.coef-card .valor{font-size:1.15rem;word-break:break-word}.coef-card .nombre{min-height:2em}
+.np-t{width:100%;border-collapse:collapse;font-size:.8rem;margin:.2rem 0 .9rem}.np-t th,.np-t td{border:1px solid var(--border);padding:6px 9px;text-align:left}.np-t th{background:var(--bg3);color:var(--text);font-weight:600}.np-t td{color:var(--text2)}.np-t .r{text-align:right;font-family:'Space Mono',monospace}.tw{overflow-x:auto}
+.np-aviso{background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.22);border-left:3px solid var(--gold);border-radius:8px;padding:.55rem .85rem;font-size:.77rem;color:#e8d98a;margin:.5rem 0;line-height:1.5}
+.interp{background:rgba(0,212,255,.06);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:.8rem 1rem;margin:1rem 0}.interp h4{font-size:.72rem;font-family:'Space Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:.4rem}.interp p{font-size:.86rem;color:var(--text);line-height:1.65}.interp strong{color:var(--accent)}
+.det{margin:.4rem 0 1rem}.det .tw{margin-top:.5rem}
+.np-seq{margin:.6rem 0 1rem}.seq-row{display:flex;flex-wrap:wrap;gap:3px;align-items:center}.sq{display:inline-block;width:14px;height:14px;border-radius:3px}.sq.a{background:var(--accent)}.sq.b{background:var(--gold)}.seq-leg{font-size:.76rem;color:var(--text2);margin-bottom:.5rem}.seq-leg .sq{vertical-align:-2px;margin-right:2px}.sep{display:inline-block;width:9px}
+.grp-item{margin-bottom:.55rem}.grp-top{display:flex;gap:.4rem;margin-bottom:.25rem}.grp-n{flex:1;min-width:0}.grp-del{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);cursor:pointer;padding:0 .6rem}.grp-del:hover{border-color:var(--accent3);color:var(--accent3)}.grp-add{margin:.2rem 0 .4rem}.grp-v{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;color:var(--text);font-family:'Space Mono',monospace;font-size:.8rem;outline:none;resize:vertical}.grp-v:focus{border-color:var(--accent)}h4.t2{font-size:.75rem;font-family:'Space Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:.4rem 0}
+.np-pronto{display:none;background:var(--panel);border:1px dashed var(--border);border-radius:12px;padding:1.2rem 1.3rem;color:var(--text2);font-size:.9rem}
+.archivo-info{font-size:.72rem;color:var(--accent4);margin:-.2rem 0 .6rem;display:none}.archivo-info.visible{display:block}
+.chart-container{height:280px}
+@media(max-width:900px){.np-tabs{grid-template-columns:repeat(2,1fr)}.np-tab:last-child{grid-column:span 2}.layout{grid-template-columns:1fr}}
+@media(max-width:600px){.coef-grid{grid-template-columns:1fr}.np-tab .cnt{display:none}header{padding:1.1rem 1rem}main{padding:1.2rem 1rem 3rem}nav.breadcrumb{padding:10px 1rem 0}.chart-container{height:240px}}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cuándo debo usar una prueba no paramétrica?", "acceptedAnswer": {"@type": "Answer", "text": "Cuando la variable es ordinal, cuando los datos no cumplen la normalidad y la muestra es pequeña, o cuando hay valores atípicos marcados que distorsionan la media. Con muestras grandes y distribución razonable, las pruebas paramétricas suelen ser igual de válidas y más potentes."}}, {"@type": "Question", "name": "¿Las pruebas no paramétricas no necesitan supuestos?", "acceptedAnswer": {"@type": "Answer", "text": "Sí los necesitan, aunque son más flexibles: exigen independencia de las observaciones y, según la prueba, variable al menos ordinal, datos continuos o formas de distribución similares. Solo evitan suponer una distribución específica, como la normal."}}, {"@type": "Question", "name": "¿Qué prueba uso en lugar de la t de Student para dos grupos independientes?", "acceptedAnswer": {"@type": "Answer", "text": "La U de Mann-Whitney. Si lo que interesa es comparar toda la distribución (posición, dispersión y forma) puede usar Kolmogorov-Smirnov de dos muestras; para comparar la dispersión, la prueba de Moses."}}, {"@type": "Question", "name": "¿Cómo reporto un resultado de Mann-Whitney?", "acceptedAnswer": {"@type": "Answer", "text": "Indique el tamaño de cada grupo, el estadístico U, el valor p y un tamaño del efecto. Ejemplo: «U = 12,0; p = 0,0015; r biserial de rangos = -0,78; n₁ = 10, n₂ = 11»."}}, {"@type": "Question", "name": "¿Wilcoxon o prueba de los signos?", "acceptedAnswer": {"@type": "Answer", "text": "Use Wilcoxon cuando pueda ordenar las diferencias por tamaño y sean razonablemente simétricas: es más potente. Use la prueba de los signos cuando solo sepa si aumentó o disminuyó, o cuando las diferencias sean muy asimétricas."}}, {"@type": "Question", "name": "¿Qué hago después de un Kruskal-Wallis significativo?", "acceptedAnswer": {"@type": "Answer", "text": "Compare los grupos por pares con la prueba de Dunn y ajuste los valores p por comparaciones múltiples (Holm o Bonferroni). La herramienta lo hace automáticamente."}}, {"@type": "Question", "name": "¿Cuándo uso Friedman y cuándo la Q de Cochran?", "acceptedAnswer": {"@type": "Answer", "text": "Friedman cuando la variable es ordinal o cuantitativa y medida en los mismos sujetos bajo varias condiciones; Q de Cochran cuando la respuesta es dicotómica (0/1)."}}, {"@type": "Question", "name": "¿Qué hago si hay valores empatados?", "acceptedAnswer": {"@type": "Answer", "text": "Casi todas las pruebas de rangos incluyen una corrección por empates, pero el valor p exacto deja de estar disponible en algunas; la herramienta le avisa cuando se usa la aproximación normal."}}]}</script>
+</head>
+<body>
+<header>
+  <a class="home" href="/"><div class="logo-icon">𝜎</div>
+  <div class="header-text"><h1>Pruebas no paramétricas</h1><p>Estadilab · Estadística interactiva en español</p></div></a>
+</header>
+<nav class="breadcrumb"><a href="/">Estadilab</a> › Pruebas no paramétricas</nav>
+<main>
+  <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+  <div class="np-tabs" id="np-tabs" role="tablist" aria-label="Tipo de diseño"></div>
+  <p class="np-tabdesc" id="np-tabdesc"></p>
+  <div class="np-pronto" id="np-pronto"></div>
+  <div id="np-app-body">
+    <div class="np-chips" id="np-pruebas" role="group" aria-label="Prueba"></div>
+    <div class="panel np-info" id="np-info"></div>
+    <div class="layout">
+      <div class="panel">
+        <h3>Datos y opciones</h3>
+        <label class="archivo-drop" for="np-archivo">📂 <strong>Subir archivo CSV o Excel</strong><span id="np-archivo-txt"></span></label>
+        <input type="file" id="np-archivo" accept=".csv,.txt,.xlsx,.xls" style="display:none">
+        <div id="np-archivo-info" class="archivo-info"></div>
+        <div class="query-separator">o escriba / pegue los datos</div>
+        <div id="np-campos"></div>
+        <div class="param-group"><label for="np-contexto">Contexto del análisis (opcional, aparece en el informe)</label><textarea id="np-contexto" rows="2" placeholder="Ej: tiempos de recuperación (días) de dos tratamientos."></textarea></div>
+        <div class="np-alpha"><label for="np-alpha">Nivel de significancia α</label><select id="np-alpha"><option value="0.10">0,10</option><option value="0.05" selected>0,05</option><option value="0.01">0,01</option></select></div>
+        <div class="np-bar" style="margin-top:.9rem"><button class="calc-btn" id="np-calc">Calcular</button><button class="np-sec" id="np-ejemplo" type="button">Cargar ejemplo</button><button class="np-sec" id="np-limpiar" type="button">Limpiar</button></div>
+        <div class="error-box" id="np-error"></div>
+      </div>
+      <div class="panel" id="np-res"></div>
+    </div>
+  </div>
+</main>
+<article class="edu-pro" id="guia-educativa">
+<h2>Pruebas no paramétricas: cuándo usarlas y cómo elegir la adecuada</h2>
+<h3>¿Qué son las pruebas no paramétricas?</h3>
+<p>Son procedimientos de inferencia que <strong>no suponen que los datos sigan una distribución concreta</strong> (por ejemplo, la normal). En lugar de trabajar con las medias y las varianzas, muchas de ellas utilizan los <strong>rangos</strong> de las observaciones —su posición al ordenarlas— o simples conteos de categorías, por lo que resisten mejor los valores atípicos y sirven con variables ordinales.</p>
+<h3>¿Cuándo conviene usarlas?</h3>
+<ul><li>La variable es <strong>ordinal</strong> (escalas de satisfacción, niveles de dolor, rangos).</li><li>La muestra es <strong>pequeña</strong> y no hay razones para suponer normalidad.</li><li>Hay <strong>valores atípicos</strong> o distribuciones muy asimétricas.</li><li>Las variables son <strong>categóricas</strong> y se comparan frecuencias.</li></ul>
+<h3>¿Qué prueba elegir? Guía rápida</h3>
+<div class="tw"><table>
+<thead><tr><th>Situación</th><th>Prueba</th><th>Equivalente paramétrico</th></tr></thead>
+<tbody>
+<tr><td>Una muestra: ¿se ajustan las frecuencias a lo esperado?</td><td>Ji-cuadrado de bondad de ajuste</td><td>—</td></tr>
+<tr><td>Una muestra: ¿la proporción de éxitos es p₀?</td><td>Binomial</td><td>Z de una proporción</td></tr>
+<tr><td>Una muestra: ¿la secuencia es aleatoria?</td><td>Rachas</td><td>—</td></tr>
+<tr><td>Una muestra: ¿sigue una distribución dada?</td><td>Kolmogorov-Smirnov</td><td>—</td></tr>
+<tr><td>Dos grupos independientes: ¿difiere la posición?</td><td>U de Mann-Whitney</td><td>t de Student independiente</td></tr>
+<tr><td>Dos grupos independientes: ¿difiere la dispersión o hay extremos?</td><td>Moses</td><td>Prueba F de varianzas</td></tr>
+<tr><td>Dos grupos independientes: ¿difiere cualquier aspecto de la distribución?</td><td>Kolmogorov-Smirnov de dos muestras; Wald-Wolfowitz</td><td>—</td></tr>
+<tr><td>Dos mediciones pareadas (antes y después)</td><td>Wilcoxon (rangos con signo); signos</td><td>t de Student pareada</td></tr>
+<tr><td>Tres o más grupos independientes</td><td>Kruskal-Wallis; mediana</td><td>ANOVA de un factor</td></tr>
+<tr><td>Tres o más grupos independientes con orden natural (dosis, niveles)</td><td>Jonckheere-Terpstra</td><td>Contraste de tendencia en ANOVA</td></tr>
+<tr><td>Tres o más mediciones repetidas</td><td>Friedman</td><td>ANOVA de medidas repetidas</td></tr>
+<tr><td>Acuerdo entre jueces</td><td>W de Kendall</td><td>—</td></tr>
+<tr><td>Tres o más mediciones repetidas con respuesta 0/1</td><td>Q de Cochran</td><td>—</td></tr>
+</tbody></table></div>
+<h3>Las dieciséis pruebas de esta página</h3>
+<ul>
+<li><strong>Ji-cuadrado de bondad de ajuste:</strong> compara las frecuencias observadas de una variable categórica con las esperadas; exige frecuencias esperadas de al menos 5 en el 80 % de las categorías.</li>
+<li><strong>Binomial:</strong> prueba exacta para una proporción; calcula también el intervalo de confianza de Clopper-Pearson.</li>
+<li><strong>Rachas:</strong> cuenta las rachas (series de valores consecutivos del mismo lado de un punto de corte). Pocas rachas indican tendencia o agrupamiento; demasiadas, oscilación.</li>
+<li><strong>Kolmogorov-Smirnov de una muestra:</strong> mide la mayor distancia entre la función de distribución empírica y la teórica. Si los parámetros se estiman con los mismos datos, hay que usar la corrección de Lilliefors; la herramienta la calcula por simulación.</li>
+<li><strong>U de Mann-Whitney:</strong> compara dos grupos independientes mediante los rangos; equivale a estimar la probabilidad de que un valor del grupo A supere a uno del grupo B.</li>
+<li><strong>Moses de reacciones extremas:</strong> contrasta si el grupo experimental presenta valores más extremos que el de control; recorta las observaciones más lejanas del grupo de control para que un atípico no decida el resultado.</li>
+<li><strong>Kolmogorov-Smirnov de dos muestras:</strong> detecta diferencias de posición, dispersión o forma entre dos distribuciones.</li>
+<li><strong>Rachas de Wald-Wolfowitz:</strong> ordena todos los valores juntos y cuenta las rachas de cada grupo; pocas rachas indican que los grupos difieren.</li>
+<li><strong>Wilcoxon de rangos con signo:</strong> compara dos mediciones pareadas usando la magnitud de las diferencias; con pocos datos y sin empates el valor p es exacto.</li>
+<li><strong>Prueba de los signos:</strong> cuenta cuántas diferencias son positivas y cuántas negativas; es la prueba pareada menos exigente.</li>
+<li><strong>Kruskal-Wallis:</strong> extiende Mann-Whitney a tres o más grupos independientes; si es significativa, las comparaciones de Dunn indican qué grupos difieren.</li>
+<li><strong>Prueba de la mediana:</strong> cuenta cuántos valores de cada grupo quedan por encima de la mediana global; es robusta pero menos potente.</li>
+<li><strong>Jonckheere-Terpstra:</strong> contrasta una tendencia ordenada entre grupos (por ejemplo, respuesta creciente con la dosis).</li>
+<li><strong>Friedman:</strong> compara tres o más condiciones medidas en los mismos sujetos mediante los rangos dentro de cada sujeto; el post hoc de Conover localiza las diferencias.</li>
+<li><strong>W de concordancia de Kendall:</strong> mide el acuerdo entre jueces que ordenan los mismos objetos.</li>
+<li><strong>Q de Cochran:</strong> versión de McNemar para tres o más condiciones con respuesta 0/1.</li>
+</ul>
+<div class="ejemplo"><h3 style="margin-top:.6rem">Ejemplo resuelto (Mann-Whitney)</h3>
+<p>Dos grupos de pacientes: A = (12, 15, 11, 18, 20, 14, 16, 13, 19, 17) y B = (15,5; 25; 29; 14,5; 24; 21; 30; 19,5; 26; 27; 31). No hay empates, así que se calcula el valor p exacto: U = 12,0, p = 0,0015 y correlación biserial de rangos r = -0,78. Con α = 0,05 se rechaza H₀: el grupo B tiende a dar valores mayores. Pruébelo con «Cargar ejemplo» en la pestaña <em>Dos independientes</em> y compare con R (<code>wilcox.test(a, b)</code>) o Python (<code>scipy.stats.mannwhitneyu</code>).</p></div>
+<div class="ejemplo"><h3 style="margin-top:.6rem">Ejemplo resuelto (Kruskal-Wallis)</h3>
+<p>Tres grupos de ocho observaciones: A = (23, 25, 21, 27, 24, 26, 22, 31), B = (28, 32, 29, 35, 27,5; 33; 30; 34) y C = (26,5; 38; 42; 37; 41; 39; 36; 43). Resultado: H = 15,740, gl = 2, p = 0,0004, ε² = 0,684 (efecto grande). Se rechaza H₀ y las comparaciones de Dunn con ajuste de Holm indican entre qué grupos están las diferencias. Cárguelo con «Cargar ejemplo» en la pestaña <em>Varias independientes</em>; en R: <code>kruskal.test()</code>.</p></div>
+<h3>Errores frecuentes y buenas prácticas</h3>
+<ul>
+<li><strong>Interpretar Mann-Whitney como comparación de medianas sin más.</strong> Solo lo es si las dos distribuciones tienen la misma forma; en general indica que un grupo tiende a dar valores mayores.</li>
+<li><strong>Aplicar el ji-cuadrado a porcentajes.</strong> Debe usar conteos, no porcentajes ni promedios.</li>
+<li><strong>Usar Kolmogorov-Smirnov con parámetros estimados sin corregir.</strong> El valor p sale demasiado alto; use Lilliefors.</li>
+<li><strong>Olvidar el orden en la prueba de rachas.</strong> Los datos deben estar en el orden en que se obtuvieron.</li>
+<li><strong>Concluir que H₀ es cierta cuando p ≥ α.</strong> Solo significa que no hay evidencia suficiente en su contra.</li>
+<li><strong>Usar pruebas para muestras independientes con datos pareados.</strong> Si los mismos sujetos se miden varias veces, use Wilcoxon, Friedman o Q de Cochran.</li>
+<li><strong>Hacer comparaciones por pares sin ajustar.</strong> Tras Kruskal-Wallis o Friedman, ajuste los valores p (Holm o Bonferroni).</li>
+<li><strong>Escribir los grupos de Jonckheere-Terpstra desordenados.</strong> Deben ir en el orden de la tendencia que espera.</li>
+<li><strong>No reportar el tamaño del efecto.</strong> Con muestras grandes, diferencias triviales resultan significativas.</li>
+</ul>
+<h3>Cómo reportar el resultado</h3>
+<p>Incluya la prueba utilizada, el estadístico, los tamaños de muestra, el valor p (exacto cuando esté disponible), un tamaño del efecto y su interpretación. Ejemplo: «La prueba U de Mann-Whitney mostró que el grupo B obtuvo valores mayores que el A (U = 12,0; p = 0,0015; r = -0,78; n₁ = 10, n₂ = 11)». Informe también los supuestos que verificó.</p>
+<h3>Preguntas frecuentes</h3>
+<details><summary>¿Cuándo debo usar una prueba no paramétrica?</summary><p>Cuando la variable es ordinal, cuando los datos no cumplen la normalidad y la muestra es pequeña, o cuando hay valores atípicos marcados que distorsionan la media. Con muestras grandes y distribución razonable, las pruebas paramétricas suelen ser igual de válidas y más potentes.</p></details><details><summary>¿Las pruebas no paramétricas no necesitan supuestos?</summary><p>Sí los necesitan, aunque son más flexibles: exigen independencia de las observaciones y, según la prueba, variable al menos ordinal, datos continuos o formas de distribución similares. Solo evitan suponer una distribución específica, como la normal.</p></details><details><summary>¿Qué prueba uso en lugar de la t de Student para dos grupos independientes?</summary><p>La U de Mann-Whitney. Si lo que interesa es comparar toda la distribución (posición, dispersión y forma) puede usar Kolmogorov-Smirnov de dos muestras; para comparar la dispersión, la prueba de Moses.</p></details><details><summary>¿Cómo reporto un resultado de Mann-Whitney?</summary><p>Indique el tamaño de cada grupo, el estadístico U, el valor p y un tamaño del efecto. Ejemplo: «U = 12,0; p = 0,0015; r biserial de rangos = -0,78; n₁ = 10, n₂ = 11».</p></details><details><summary>¿Wilcoxon o prueba de los signos?</summary><p>Use Wilcoxon cuando pueda ordenar las diferencias por tamaño y sean razonablemente simétricas: es más potente. Use la prueba de los signos cuando solo sepa si aumentó o disminuyó, o cuando las diferencias sean muy asimétricas.</p></details><details><summary>¿Qué hago después de un Kruskal-Wallis significativo?</summary><p>Compare los grupos por pares con la prueba de Dunn y ajuste los valores p por comparaciones múltiples (Holm o Bonferroni). La herramienta lo hace automáticamente.</p></details><details><summary>¿Cuándo uso Friedman y cuándo la Q de Cochran?</summary><p>Friedman cuando la variable es ordinal o cuantitativa y medida en los mismos sujetos bajo varias condiciones; Q de Cochran cuando la respuesta es dicotómica (0/1).</p></details><details><summary>¿Qué hago si hay valores empatados?</summary><p>Casi todas las pruebas de rangos incluyen una corrección por empates, pero el valor p exacto deja de estar disponible en algunas; la herramienta le avisa cuando se usa la aproximación normal.</p></details>
+<p class="edu-meta" style="font-size:12.5px;color:#666;border-top:1px solid #e0e0dc;margin-top:1.2rem;padding-top:.7rem">Última revisión: noviembre de 2026. Los cálculos se validaron contra SciPy, statsmodels, scikit-posthocs y R. Conozca <a href="/metodologia/">cómo se construyen y revisan las herramientas</a>, las <a href="/fuentes/">fuentes de referencia</a> y la <a href="/politica-editorial/">política editorial</a>.</p>
+</article>
+<div class="hp-footer" role="contentinfo">
+  <strong>Estadilab</strong> — estadística interactiva y gratuita en español para estudiantes, docentes e investigadores.<br>
+  Proyecto independiente de Juan Carlos Gaviria Chaverra, docente ocasional de la Universidad de Antioquia.<br>
+  <a href="/">Inicio</a> · <a href="/acerca-de/">Acerca de</a> · <a href="/metodologia/">Metodología</a> · <a href="/fuentes/">Fuentes</a> · <a href="/politica-editorial/">Política editorial</a> · <a href="/contacto/">Contacto</a> · <a href="/privacidad/">Privacidad</a> · <a href="/terminos/">Términos</a>
+  <small>Herramientas de uso académico y orientativo; no reemplazan el criterio de un docente o de un estadístico. Última revisión del sitio: noviembre de 2026. Proyecto hermano de <a href="https://herramientaspro.com.co" rel="noopener">HerramientasPro Colombia</a>.</small>
+</div>
+<script src="/js/hp-codigo.js"></script>
+<script src="/js/np-motor.js"></script>
+<script src="js/np-pruebas.js"></script>
+<script src="js/np-pruebas2.js"></script>
+<script src="/js/np-ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datos cualitativos en línea: tablas de frecuencia, ji-cuadrado, Fisher, McNemar y kappa | Estadilab</title>
+<meta name="description" content="Calculadora gratuita para variables categóricas: tablas de frecuencia con gráficos, ji-cuadrado de independencia, Fisher exacto, McNemar y kappa de Cohen, con interpretación y código en R y Python.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://estadilab.com/datos-cualitativos/">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Estadilab"><meta property="og:title" content="Datos cualitativos en línea: tablas de frecuencia, ji-cuadrado, Fisher, McNemar y kappa | Estadilab"><meta property="og:description" content="Calculadora gratuita para variables categóricas: tablas de frecuencia con gráficos, ji-cuadrado de independencia, Fisher exacto, McNemar y kappa de Cohen, con interpretación y código en R y Python."><meta property="og:url" content="https://estadilab.com/datos-cualitativos/"><meta property="og:image" content="https://estadilab.com/assets/og-estadilab.jpg"><meta name="twitter:card" content="summary_large_image">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
+    --panel: #1a2340; --border: #2a3a5c;
+    --accent: #00d4ff; --accent2: #7b61ff; --accent4: #00ff9d; --accent3: #ff6b6b;
+    --text: #e8edf8; --text2: #8a9bb8; --text3: #4a5a78;
+    --gold: #ffd700;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  header { position: relative; z-index: 10; padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(0,212,255,0.05) 0%, transparent 100%); display: flex; align-items: center; gap: 1.2rem; }
+  .logo-icon { width: 46px; height: 46px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+  .header-text h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header-text p { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+  nav.breadcrumb { position: relative; z-index: 10; padding: 10px 2rem 0; font-size: 0.78rem; color: var(--text3); }
+  nav.breadcrumb a { color: var(--accent); text-decoration: none; }
+  main { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 1.4rem 2rem 3rem; display: flex; flex-direction: column; gap: 1.2rem; }
+  .disclaimer { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); border-left: 3px solid var(--gold); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.78rem; color: #e8d98a; }
+
+  .layout { display: grid; grid-template-columns: 380px 1fr; gap: 1.2rem; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.2rem; }
+  .panel h3 { font-size: 0.72rem; font-family: 'Space Mono', monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); margin-bottom: 1rem; }
+
+  .archivo-drop { display: block; border: 1.5px dashed var(--border); border-radius: 10px; padding: 0.8rem 1rem; text-align: center; cursor: pointer; margin-bottom: 0.8rem; }
+  .archivo-drop:hover { border-color: var(--accent); background: rgba(0,212,255,0.04); }
+  .archivo-drop strong { display: block; font-size: 0.82rem; color: var(--text); margin: 0.15rem 0; }
+  .archivo-drop span { font-size: 0.68rem; color: var(--text3); }
+  .archivo-info { font-size: 0.72rem; color: var(--accent4); margin: -0.3rem 0 0.6rem; display: none; }
+  .archivo-info.visible { display: block; }
+  .query-separator { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); text-align: center; margin: 0.7rem 0 0.6rem; }
+
+  .campos-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+  .param-group { margin-bottom: 0.85rem; }
+  .param-group label { display: block; font-size: 0.78rem; color: var(--text2); margin-bottom: 0.35rem; }
+  .param-group input, .param-group textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.82rem; outline: none; }
+  .param-group input:focus, .param-group textarea:focus { border-color: var(--accent); }
+  .param-group textarea { min-height: 90px; resize: vertical; }
+
+  .calc-btn { width: 100%; padding: 0.75rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: 0.4rem; }
+  .error-box { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.78rem; color: #ff4d6d; margin-top: 0.6rem; display: none; }
+
+  .coef-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-bottom: 1rem; }
+  .coef-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center; }
+  .coef-card.principal { border-color: var(--accent); background: rgba(0,212,255,0.06); }
+  .coef-card .nombre { font-size: 0.68rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.4rem; }
+  .coef-card .valor { font-family: 'Space Mono', monospace; font-size: 1.3rem; font-weight: 700; color: var(--accent); }
+  .coef-card .pval { font-size: 0.65rem; color: var(--text3); margin-top: 0.3rem; }
+
+  .chart-container { position: relative; height: 260px; margin-bottom: 1rem; }
+  .conclusion-text { font-size: 0.85rem; color: var(--text2); line-height: 1.6; }
+  .sin-resultado { text-align: center; color: var(--text3); font-size: 0.85rem; padding: 2rem; }
+
+  .context-panel { grid-column: 1 / -1; }
+  .context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 900px) { .context-grid { grid-template-columns: 1fr; } }
+  .pregunta-row { display: flex; gap: 0.6rem; margin-top: 0.6rem; }
+  .pregunta-row input { flex: 1; }
+  .pregunta-row button { width: auto; padding: 0.55rem 1.1rem; white-space: nowrap; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; }
+  .sugerencias { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .sugerencia-chip { font-size: 0.7rem; padding: 0.3rem 0.65rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; color: var(--text2); cursor: pointer; }
+  .sugerencia-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .respuesta-box { margin-top: 0.9rem; background: var(--bg3); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 8px; padding: 0.9rem 1rem; font-size: 0.85rem; color: var(--text); line-height: 1.6; display: none; }
+  .respuesta-box.visible { display: block; }
+  .ia-note { font-size: 0.68rem; color: var(--text3); margin-top: 0.5rem; font-style: italic; }
+</style>
+<style id="edu-pro-css">
+.edu-pro{position:relative;z-index:5;max-width:960px;margin:2.5rem auto 0;padding:1.8rem 2rem 3rem;color:var(--text2,#8a9bb8);line-height:1.75;font-size:.95rem;border-top:1px solid var(--border,#2a3a5c)}
+.edu-pro h2{color:var(--text,#e8edf8);font-size:1.35rem;margin:0 0 .8rem}
+.edu-pro h3{color:var(--accent,#00d4ff);font-size:1.02rem;margin:1.4rem 0 .4rem}
+.edu-pro p,.edu-pro ul{margin:0 0 .8rem}.edu-pro ul{padding-left:1.3rem}.edu-pro li{margin-bottom:.35rem}
+.edu-pro strong{color:var(--text,#e8edf8)}.edu-pro code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.85em}
+.edu-pro details{background:var(--panel,#1a2340);border:1px solid var(--border,#2a3a5c);border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem}
+.edu-pro summary{cursor:pointer;color:var(--text,#e8edf8);font-weight:600}.edu-pro details p{margin:.5rem 0 0}
+.edu-pro .ejemplo{background:rgba(0,212,255,.06);border-left:3px solid var(--accent,#00d4ff);padding:.2rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+@media(max-width:700px){.edu-pro{padding:1.4rem 1rem 2.5rem}}
+</style>
+<style id="hp-footer-css">
+.hp-footer{margin:2.5rem 0 0;padding:1.5rem 1rem 2rem;border-top:1px solid rgba(128,128,128,.35);text-align:center;font:13px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:inherit;opacity:.9}
+.hp-footer a{color:inherit;text-decoration:underline;margin:0 .35rem}
+.hp-footer small{display:block;margin-top:.4rem;opacity:.8;font-size:11.5px}
+</style>
+<style id="hp-mobile-fix">
+/* Móvil: evita que tablas y resultados ensanchen la página (min-width:auto de los ítems de grid) */
+@media (max-width: 900px){.app>*,.layout>*,.main-content,.calc-grid>*,.panel{min-width:0;max-width:100%}.panel table,.main-content table{display:block;overflow-x:auto;max-width:100%}}
+@media (max-width: 600px){.coef-grid{grid-template-columns:1fr}}
+</style>
+<style id="np-css">
+.logo-icon{text-decoration:none;color:#0a0e1a;font-weight:700}header a.home{display:flex;align-items:center;gap:1.2rem;text-decoration:none;color:inherit}
+.np-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:.55rem}
+.np-tab{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:.15rem;text-align:left;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:.7rem .85rem;color:var(--text);font-family:inherit;cursor:pointer;transition:border-color .15s,transform .15s}
+.np-tab:hover{border-color:var(--accent)}
+.np-tab.on{border-color:var(--accent);background:linear-gradient(160deg,rgba(0,212,255,.12),rgba(123,97,255,.1))}
+.np-tab .num{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--accent);letter-spacing:.08em}
+.np-tab .nm{font-size:.86rem;font-weight:600;line-height:1.25}
+.np-tab .cnt{font-size:.68rem;color:var(--text3)}
+.np-tab.pronto{opacity:.6}.np-tab .soon{font-size:.66rem;color:var(--gold);font-family:'Space Mono',monospace}
+.np-tabdesc{font-size:.84rem;color:var(--text2);margin:.1rem 0 0}
+.np-chips{display:flex;flex-wrap:wrap;gap:.5rem}
+.np-chip{background:var(--bg3);border:1px solid var(--border);border-radius:999px;padding:.45rem .95rem;font-family:inherit;font-size:.82rem;color:var(--text2);cursor:pointer}
+.np-chip:hover{border-color:var(--accent);color:var(--text)}.np-chip.on{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#0a0e1a;font-weight:600}
+.np-info h2{font-size:1.1rem;color:var(--text);margin-bottom:.4rem}.np-info p{font-size:.85rem;color:var(--text2);line-height:1.6;margin-bottom:.4rem}
+.np-info .dt{font-size:.8rem}.np-info details{margin-top:.4rem}.np-info summary,.det summary{cursor:pointer;font-size:.8rem;color:var(--accent)}.np-info ul{margin:.4rem 0 0 1.1rem;font-size:.8rem;color:var(--text2);line-height:1.6}
+.np-bar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.np-bar .calc-btn{flex:1 1 150px;margin-top:0}.np-sec{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:.65rem .9rem;color:var(--text2);font-family:inherit;font-size:.82rem;cursor:pointer}.np-sec:hover{border-color:var(--accent);color:var(--text)}
+.param-group select,.param-group input[type=number],.param-group input[type=text]{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.5rem .75rem;color:var(--text);font-family:'Space Mono',monospace;font-size:.82rem;outline:none}
+.param-group select:focus,.param-group input:focus{border-color:var(--accent)}
+.param-group .hint,.hint{font-size:.7rem;color:var(--text3);margin-top:.3rem;line-height:1.45}
+.np-alpha{display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:var(--text2)}.np-alpha select{width:auto;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.35rem .5rem;color:var(--text);font-family:'Space Mono',monospace}
+.hipo{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:.7rem .9rem;margin-bottom:.9rem;font-size:.82rem;color:var(--text2);line-height:1.55}.hipo b{color:var(--accent)}.hipo .al{font-size:.72rem;color:var(--text3);margin-top:.3rem}
+.coef-card .valor{font-size:1.15rem;word-break:break-word}.coef-card .nombre{min-height:2em}
+.np-t{width:100%;border-collapse:collapse;font-size:.8rem;margin:.2rem 0 .9rem}.np-t th,.np-t td{border:1px solid var(--border);padding:6px 9px;text-align:left}.np-t th{background:var(--bg3);color:var(--text);font-weight:600}.np-t td{color:var(--text2)}.np-t .r{text-align:right;font-family:'Space Mono',monospace}.tw{overflow-x:auto}
+.np-aviso{background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.22);border-left:3px solid var(--gold);border-radius:8px;padding:.55rem .85rem;font-size:.77rem;color:#e8d98a;margin:.5rem 0;line-height:1.5}
+.interp{background:rgba(0,212,255,.06);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:.8rem 1rem;margin:1rem 0}.interp h4{font-size:.72rem;font-family:'Space Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:.4rem}.interp p{font-size:.86rem;color:var(--text);line-height:1.65}.interp strong{color:var(--accent)}
+.det{margin:.4rem 0 1rem}.det .tw{margin-top:.5rem}
+.np-seq{margin:.6rem 0 1rem}.seq-row{display:flex;flex-wrap:wrap;gap:3px;align-items:center}.sq{display:inline-block;width:14px;height:14px;border-radius:3px}.sq.a{background:var(--accent)}.sq.b{background:var(--gold)}.seq-leg{font-size:.76rem;color:var(--text2);margin-bottom:.5rem}.seq-leg .sq{vertical-align:-2px;margin-right:2px}.sep{display:inline-block;width:9px}
+.grp-item{margin-bottom:.55rem}.grp-top{display:flex;gap:.4rem;margin-bottom:.25rem}.grp-n{flex:1;min-width:0}.grp-del{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);cursor:pointer;padding:0 .6rem}.grp-del:hover{border-color:var(--accent3);color:var(--accent3)}.grp-add{margin:.2rem 0 .4rem}.grp-v{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.45rem .7rem;color:var(--text);font-family:'Space Mono',monospace;font-size:.8rem;outline:none;resize:vertical}.grp-v:focus{border-color:var(--accent)}h4.t2{font-size:.75rem;font-family:'Space Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:.4rem 0}
+.np-pronto{display:none;background:var(--panel);border:1px dashed var(--border);border-radius:12px;padding:1.2rem 1.3rem;color:var(--text2);font-size:.9rem}
+.archivo-info{font-size:.72rem;color:var(--accent4);margin:-.2rem 0 .6rem;display:none}.archivo-info.visible{display:block}
+.chart-container{height:280px}
+@media(max-width:900px){.np-tabs{grid-template-columns:repeat(2,1fr)}.np-tab:last-child{grid-column:span 2}.layout{grid-template-columns:1fr}}
+@media(max-width:600px){.coef-grid{grid-template-columns:1fr}.np-tab .cnt{display:none}header{padding:1.1rem 1rem}main{padding:1.2rem 1rem 3rem}nav.breadcrumb{padding:10px 1rem 0}.chart-container{height:240px}}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cuándo uso ji-cuadrado y cuándo Fisher?", "acceptedAnswer": {"@type": "Answer", "text": "Use ji-cuadrado cuando las frecuencias esperadas sean al menos 5 en el 80 % de las celdas. Si hay frecuencias pequeñas, especialmente en tablas 2 × 2, use la prueba exacta de Fisher, que no depende de esa aproximación."}}, {"@type": "Question", "name": "¿Qué mide la V de Cramér?", "acceptedAnswer": {"@type": "Answer", "text": "Es una medida de la fuerza de la asociación entre dos variables categóricas, entre 0 (independientes) y 1 (asociación perfecta). La interpretación depende del tamaño de la tabla: para tablas 2 × k, 0,1 es pequeña, 0,3 mediana y 0,5 grande."}}, {"@type": "Question", "name": "¿Qué diferencia hay entre ji-cuadrado de independencia y McNemar?", "acceptedAnswer": {"@type": "Answer", "text": "El ji-cuadrado de independencia se usa con grupos distintos de sujetos. McNemar se usa cuando los mismos sujetos se miden dos veces (antes y después) con una respuesta dicotómica."}}, {"@type": "Question", "name": "¿Qué es un buen valor de kappa?", "acceptedAnswer": {"@type": "Answer", "text": "Como guía de Landis y Koch: 0,0–0,20 leve; 0,21–0,40 aceptable; 0,41–0,60 moderado; 0,61–0,80 sustancial; más de 0,80 casi perfecto. Interprételo junto con el porcentaje de acuerdo y la prevalencia de las categorías."}}, {"@type": "Question", "name": "¿Barras o gráfico circular?", "acceptedAnswer": {"@type": "Answer", "text": "Las barras permiten comparar categorías con precisión y son preferibles cuando hay más de cinco categorías; el gráfico circular solo sirve para mostrar partes de un todo con pocas categorías. El diagrama de Pareto ordena de mayor a menor y añade el porcentaje acumulado."}}]}</script>
+</head>
+<body>
+<header>
+  <a class="home" href="/"><div class="logo-icon">𝜎</div>
+  <div class="header-text"><h1>Datos cualitativos</h1><p>Estadilab · Estadística interactiva en español</p></div></a>
+</header>
+<nav class="breadcrumb"><a href="/">Estadilab</a> › Datos cualitativos</nav>
+<main>
+  <div class="disclaimer">⚠️ Herramienta orientativa de uso académico. Los resultados y las interpretaciones automáticas no reemplazan el criterio del docente ni un análisis estadístico formal.</div>
+  <div class="np-tabs" id="np-tabs" role="tablist" aria-label="Tipo de análisis"></div>
+  <p class="np-tabdesc" id="np-tabdesc"></p>
+  <div class="np-pronto" id="np-pronto"></div>
+  <div id="np-app-body">
+    <div class="np-chips" id="np-pruebas" role="group" aria-label="Prueba"></div>
+    <div class="panel np-info" id="np-info"></div>
+    <div class="layout">
+      <div class="panel">
+        <h3>Datos y opciones</h3>
+        <label class="archivo-drop" for="np-archivo">📂 <strong>Subir archivo CSV o Excel</strong><span id="np-archivo-txt"></span></label>
+        <input type="file" id="np-archivo" accept=".csv,.txt,.xlsx,.xls" style="display:none">
+        <div id="np-archivo-info" class="archivo-info"></div>
+        <div class="query-separator">o escriba / pegue los datos</div>
+        <div id="np-campos"></div>
+        <div class="param-group"><label for="np-contexto">Contexto del análisis (opcional, aparece en el informe)</label><textarea id="np-contexto" rows="2" placeholder="Ej: aprobación de un curso según la jornada de estudio."></textarea></div>
+        <div class="np-alpha"><label for="np-alpha">Nivel de significancia α</label><select id="np-alpha"><option value="0.10">0,10</option><option value="0.05" selected>0,05</option><option value="0.01">0,01</option></select></div>
+        <div class="np-bar" style="margin-top:.9rem"><button class="calc-btn" id="np-calc">Calcular</button><button class="np-sec" id="np-ejemplo" type="button">Cargar ejemplo</button><button class="np-sec" id="np-limpiar" type="button">Limpiar</button></div>
+        <div class="error-box" id="np-error"></div>
+      </div>
+      <div class="panel" id="np-res"></div>
+    </div>
+  </div>
+</main>
+<article class="edu-pro" id="guia-educativa">
+<h2>Análisis de datos cualitativos: frecuencias, asociación y acuerdo</h2>
+<h3>¿Qué son los datos cualitativos?</h3>
+<p>Son variables que clasifican a los sujetos en <strong>categorías</strong>: nominales (sexo, programa académico, color) u ordinales, con un orden natural (leve, moderado, grave; nivel de satisfacción). No se calculan medias: se cuentan frecuencias y se comparan proporciones.</p>
+<h3>¿Qué análisis elegir?</h3>
+<div class="tw"><table>
+<thead><tr><th>Pregunta</th><th>Herramienta</th></tr></thead>
+<tbody>
+<tr><td>¿Cómo se distribuye una variable categórica?</td><td>Tabla de frecuencias, porcentajes y gráficos</td></tr>
+<tr><td>¿Están asociadas dos variables categóricas (grupos distintos)?</td><td>Ji-cuadrado de independencia</td></tr>
+<tr><td>Lo mismo, con frecuencias pequeñas</td><td>Prueba exacta de Fisher</td></tr>
+<tr><td>¿Cambió una respuesta sí/no en los mismos sujetos?</td><td>McNemar</td></tr>
+<tr><td>¿Coinciden dos evaluadores al clasificar?</td><td>Kappa de Cohen</td></tr>
+</tbody></table></div>
+<h3>Tablas de frecuencia y gráficos</h3>
+<p>La tabla resume cuántas observaciones hay en cada categoría (frecuencia absoluta), qué proporción representan (frecuencia relativa) y, en variables ordinales, cuánto suman acumuladamente. La herramienta añade el <strong>intervalo de confianza de Wilson</strong> para cada porcentaje, que es más fiable que el intervalo normal con muestras pequeñas o proporciones extremas. Elija <em>barras</em> para comparar, <em>circular</em> para partes de un todo con pocas categorías y <em>Pareto</em> para priorizar las categorías más frecuentes.</p>
+<h3>Ji-cuadrado de independencia y Fisher</h3>
+<p>Ambas contrastan H₀: «las dos variables son independientes». El ji-cuadrado compara las frecuencias observadas con las esperadas si no hubiera asociación y exige frecuencias esperadas de al menos 5 en el 80 % de las celdas. Fisher calcula el valor p exacto y no tiene esa restricción; en tablas 2 × 2 entrega además el <strong>odds ratio</strong> con su intervalo exacto. Cuando el resultado es significativo, los <strong>residuos estandarizados ajustados</strong> (|z| &gt; 1,96) señalan qué celdas se apartan de lo esperado, y la <strong>V de Cramér</strong> mide la fuerza de la asociación.</p>
+<div class="ejemplo"><h3 style="margin-top:.6rem">Ejemplo resuelto</h3>
+<p>Tasa de aprobación según jornada: diurno 45 aprobaron y 15 reprobaron; nocturno 30 y 30; virtual 25 y 35. Ji-cuadrado de independencia: χ² = 14,625, gl = 2, p = 0,0007, V de Cramér = 0,285 (asociación mediana). Se rechaza la independencia: la aprobación depende de la jornada. Para una tabla 2 × 2 pequeña, como tratado 8 de 10 mejoran y control 3 de 10, Fisher da p = 0,0698 y un odds ratio condicional de 8,15 (IC 95 % [0,88; 127,0]): con tan pocos datos el intervalo es muy amplio. Cárguelos con «Cargar ejemplo» y compare con R (<code>chisq.test()</code> y <code>fisher.test()</code>).</p></div>
+<h3>McNemar: mismos sujetos medidos dos veces</h3>
+<p>Solo los pares que <em>cambiaron</em> aportan información: b (de «sí» a «no») y c (de «no» a «sí»). H₀ plantea que ambos cambios son igual de probables. Con 15 pares que pasaron en un sentido y 5 en el otro, el valor p exacto es 0,0414 y el odds ratio pareado b/c = 3,0.</p>
+<h3>Kappa de Cohen: acuerdo entre evaluadores</h3>
+<p>El kappa descuenta el acuerdo que ocurriría por azar. Para dos evaluadores que clasifican a los mismos sujetos en tres niveles de gravedad, κ = 0,565 (IC 95 % [0,40; 0,73]), un acuerdo moderado. Si las categorías son ordinales, use kappa <strong>ponderado</strong>, que penaliza menos los desacuerdos entre categorías vecinas.</p>
+<h3>Errores frecuentes y buenas prácticas</h3>
+<ul>
+<li><strong>Usar porcentajes en lugar de conteos</strong> en ji-cuadrado, Fisher o McNemar: la prueba necesita las frecuencias.</li>
+<li><strong>Aplicar ji-cuadrado con frecuencias esperadas muy pequeñas.</strong> Use Fisher o agrupe categorías con criterio.</li>
+<li><strong>Tratar datos pareados como independientes.</strong> Si los mismos sujetos se miden dos veces, use McNemar, no ji-cuadrado.</li>
+<li><strong>Confundir asociación con causalidad.</strong> Una asociación significativa no demuestra que una variable cause la otra.</li>
+<li><strong>Interpretar kappa sin mirar la prevalencia.</strong> Puede ser bajo aun con alto porcentaje de acuerdo si casi todos los casos caen en una categoría.</li>
+<li><strong>Buscar celdas «significativas» sin que la prueba global lo sea.</strong> Los residuos solo se interpretan cuando hay evidencia global de asociación.</li>
+</ul>
+<h3>Cómo reportar los resultados</h3>
+<p>Indique la prueba, el estadístico, los grados de libertad, el tamaño de la muestra, el valor p y una medida del tamaño del efecto. Ejemplo: «Se halló asociación entre la jornada y la aprobación (χ²(2) = 14,62; p = 0,0007; V de Cramér = 0,29; n = 180)».</p>
+<h3>Preguntas frecuentes</h3>
+<details><summary>¿Cuándo uso ji-cuadrado y cuándo Fisher?</summary><p>Use ji-cuadrado cuando las frecuencias esperadas sean al menos 5 en el 80 % de las celdas. Si hay frecuencias pequeñas, especialmente en tablas 2 × 2, use la prueba exacta de Fisher, que no depende de esa aproximación.</p></details><details><summary>¿Qué mide la V de Cramér?</summary><p>Es una medida de la fuerza de la asociación entre dos variables categóricas, entre 0 (independientes) y 1 (asociación perfecta). La interpretación depende del tamaño de la tabla: para tablas 2 × k, 0,1 es pequeña, 0,3 mediana y 0,5 grande.</p></details><details><summary>¿Qué diferencia hay entre ji-cuadrado de independencia y McNemar?</summary><p>El ji-cuadrado de independencia se usa con grupos distintos de sujetos. McNemar se usa cuando los mismos sujetos se miden dos veces (antes y después) con una respuesta dicotómica.</p></details><details><summary>¿Qué es un buen valor de kappa?</summary><p>Como guía de Landis y Koch: 0,0–0,20 leve; 0,21–0,40 aceptable; 0,41–0,60 moderado; 0,61–0,80 sustancial; más de 0,80 casi perfecto. Interprételo junto con el porcentaje de acuerdo y la prevalencia de las categorías.</p></details><details><summary>¿Barras o gráfico circular?</summary><p>Las barras permiten comparar categorías con precisión y son preferibles cuando hay más de cinco categorías; el gráfico circular solo sirve para mostrar partes de un todo con pocas categorías. El diagrama de Pareto ordena de mayor a menor y añade el porcentaje acumulado.</p></details>
+<p class="edu-meta" style="font-size:12.5px;color:#666;border-top:1px solid #e0e0dc;margin-top:1.2rem;padding-top:.7rem">Última revisión: noviembre de 2026. Los cálculos se validaron contra R, SciPy, statsmodels y scikit-learn. Conozca <a href="/metodologia/">cómo se construyen y revisan las herramientas</a>, las <a href="/fuentes/">fuentes de referencia</a> y la <a href="/politica-editorial/">política editorial</a>.</p>
+</article>
+<div class="hp-footer" role="contentinfo">
+  <strong>Estadilab</strong> — estadística interactiva y gratuita en español para estudiantes, docentes e investigadores.<br>
+  Proyecto independiente de Juan Carlos Gaviria Chaverra, docente ocasional de la Universidad de Antioquia.<br>
+  <a href="/">Inicio</a> · <a href="/acerca-de/">Acerca de</a> · <a href="/metodologia/">Metodología</a> · <a href="/fuentes/">Fuentes</a> · <a href="/politica-editorial/">Política editorial</a> · <a href="/contacto/">Contacto</a> · <a href="/privacidad/">Privacidad</a> · <a href="/terminos/">Términos</a>
+  <small>Herramientas de uso académico y orientativo; no reemplazan el criterio de un docente o de un estadístico. Última revisión del sitio: noviembre de 2026. Proyecto hermano de <a href="https://herramientaspro.com.co" rel="noopener">HerramientasPro Colombia</a>.</small>
+</div>
+<script src="/js/hp-codigo.js"></script>
+<script src="/js/np-motor.js"></script>
+<script src="js/cual-motor.js"></script>
+<script src="js/cual-pruebas.js"></script>
+<script src="/js/np-ui.js"></script>
+</body>
+</html>
