@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
+.tabla-scroll{overflow-x:auto;max-width:100%}.aviso-fac{border:1px solid #2a3a5c;border-left:3px solid #00ff9d;background:rgba(0,255,157,.05);padding:10px 12px;border-radius:8px;margin:0 0 12px;font-size:.9rem}.nota-conf{font-size:.85rem;opacity:.8;margin:8px 0}details.pegar{margin:10px 0}details.pegar textarea{width:100%}#sel-r{width:100%;box-sizing:border-box}
   :root {
     --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
     --panel: #1a2340; --border: #2a3a5c;
@@ -100,7 +101,7 @@
 .edu-pro .ejemplo{background:rgba(0,212,255,.06);border-left:3px solid var(--accent,#00d4ff);padding:.2rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
 @media(max-width:700px){.edu-pro{padding:1.4rem 1rem 2.5rem}}
 </style>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cuántas corridas necesito?", "acceptedAnswer": {"@type": "Answer", "text": "2ᵏ por réplica. Con k = 3 son 8 corridas; con dos réplicas, 16."}}, {"@type": "Question", "name": "¿Qué pasa si hay interacción significativa?", "acceptedAnswer": {"@type": "Answer", "text": "Interpreta los efectos principales con cautela: el efecto de un factor cambia según el nivel del otro."}}, {"@type": "Question", "name": "¿Por qué aleatorizar?", "acceptedAnswer": {"@type": "Answer", "text": "Para evitar que factores externos (tiempo, operario) se confundan con los efectos estudiados."}}, {"@type": "Question", "name": "¿Y si necesito más de dos niveles?", "acceptedAnswer": {"@type": "Answer", "text": "Se requieren diseños factoriales generales o de superficie de respuesta, que no cubre esta herramienta."}}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cuántas corridas necesito?", "acceptedAnswer": {"@type": "Answer", "text": "2ᵏ por réplica. Con k = 3 son 8 corridas; con dos réplicas, 16. La herramienta acepta de 1 a 50 réplicas, de 2 a 6 factores y corridas con distinta cantidad de observaciones; con una sola réplica se usa el método de Lenth."}}, {"@type": "Question", "name": "¿Qué pasa si hay interacción significativa?", "acceptedAnswer": {"@type": "Answer", "text": "Interpreta los efectos principales con cautela: el efecto de un factor cambia según el nivel del otro."}}, {"@type": "Question", "name": "¿Por qué aleatorizar?", "acceptedAnswer": {"@type": "Answer", "text": "Para evitar que factores externos (tiempo, operario) se confundan con los efectos estudiados."}}, {"@type": "Question", "name": "¿Y si necesito más de dos niveles?", "acceptedAnswer": {"@type": "Answer", "text": "Se requieren diseños factoriales generales o de superficie de respuesta, que no cubre esta herramienta."}}]}</script>
 <style id="hp-footer-css">
 .hp-footer{margin:2.5rem 0 0;padding:1.5rem 1rem 2rem;border-top:1px solid rgba(128,128,128,.35);text-align:center;font:13px/1.7 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:inherit;opacity:.9}
 .hp-footer a{color:inherit;text-decoration:underline;margin:0 .35rem}
@@ -129,7 +130,7 @@
   <div class="prueba-header">
     <h2>Diseño factorial 2ᵏ con réplicas</h2>
     <span class="formula">Efecto = Contraste / (r·2^(k-1))</span>
-    <p>Evalúa el efecto de k factores (cada uno en 2 niveles: bajo/alto) sobre una respuesta, incluyendo todas sus interacciones. Necesitas al menos 2 réplicas por corrida para poder calcular el error puro.</p>
+    <p>Evalúa el efecto de k factores (cada uno en 2 niveles: bajo/alto) sobre una respuesta, incluyendo todas sus interacciones. Puedes usar cualquier número de réplicas: con 2 o más se estima el error puro y se prueban los efectos con F; con una sola observación por corrida el análisis usa el gráfico normal de efectos y el método de Lenth. Las corridas pueden tener distinta cantidad de observaciones.</p>
   </div>
 
   <div class="panel">
@@ -141,17 +142,21 @@
           <option value="2">2 factores (A, B)</option>
           <option value="3" selected>3 factores (A, B, C)</option>
           <option value="4">4 factores (A, B, C, D)</option>
+          <option value="5">5 factores (A–E, 32 corridas)</option>
+          <option value="6">6 factores (A–F, 64 corridas)</option>
         </select>
       </div>
       <div class="param-group">
-        <label>Número de réplicas por corrida</label>
-        <select id="sel-r" onchange="configurarDiseno()">
-          <option value="2" selected>2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-        </select>
+        <label>Réplicas por corrida (1 a 50)</label>
+        <input type="number" id="sel-r" min="1" max="50" value="2" oninput="actualizarNotaR()">
       </div>
     </div>
+    <p class="nota-conf" id="nota-r"></p>
+    <details class="pegar"><summary>Pegar todos los datos de una vez</summary>
+      <p class="nota-conf">Una línea por corrida, en el orden estándar de la tabla ((1), a, b, ab, c…). Los valores de cada línea se separan con coma, espacio o tabulador; puedes pegar desde Excel. Las líneas pueden tener distinta cantidad de valores.</p>
+      <textarea id="pegar-datos" rows="5" placeholder="12.1, 12.4, 11.9&#10;15.0, 14.7&#10;…"></textarea>
+      <button type="button" class="calc-btn" style="margin-top:8px" onclick="aplicarPegado()">Cargar en la tabla</button>
+    </details>
     <div id="tabla-diseno-cont"></div>
     <button class="calc-btn" onclick="calcularFactorial()">Calcular diseño factorial</button>
     <div class="error-box" id="error-box"></div>
@@ -196,18 +201,43 @@ let currentResultadoFactorial = null;
 let currentDatosFactorial = null;
 let chartFactorial = null;
 
+function leerR() { const v = parseInt(document.getElementById('sel-r').value); return Math.min(50, Math.max(1, isNaN(v) ? 1 : v)); }
+
 function configurarDiseno() {
   const k = parseInt(document.getElementById('sel-k').value);
-  const r = parseInt(document.getElementById('sel-r').value);
+  const r = leerR();
   const corridas = generarDiseno(k);
-  const letras = ['A', 'B', 'C', 'D', 'E'].slice(0, k);
+  const letras = LETRAS.slice(0, k);
+  const prev = {};
+  document.querySelectorAll('.rep-input').forEach(el => { prev[el.id] = el.value; });
+  const ej = Array.from({length: Math.min(r, 4)}, (_, j) => (20 + j)).join(', ') + (r > 4 ? ', …' : '');
 
-  let html = `<table class="tabla-diseno"><thead><tr><th>Corrida</th>${letras.map(l => `<th>${l}</th>`).join('')}<th>Réplicas (separadas por coma)</th></tr></thead><tbody>`;
+  let html = `<div class="tabla-scroll"><table class="tabla-diseno"><thead><tr><th>Corrida</th>${letras.map(l => `<th>${l}</th>`).join('')}<th>Observaciones (separadas por coma)</th></tr></thead><tbody>`;
   corridas.forEach((c, i) => {
-    html += `<tr><td class="etiqueta">${c.etiqueta}</td>${c.signos.map(s => `<td class="signo">${s === 1 ? '+' : '−'}</td>`).join('')}<td><input class="rep-input" id="corrida-${i}" placeholder="Ej: ${Array.from({length:r},(_,j)=>(20+j)).join(', ')}"></td></tr>`;
+    html += `<tr><td class="etiqueta">${c.etiqueta}</td>${c.signos.map(s => `<td class="signo">${s === 1 ? '+' : '−'}</td>`).join('')}<td><input class="rep-input" id="corrida-${i}" value="${prev['corrida-' + i] || ''}" placeholder="Ej: ${ej}"></td></tr>`;
   });
-  html += '</tbody></table>';
+  html += '</tbody></table></div>';
   document.getElementById('tabla-diseno-cont').innerHTML = html;
+  actualizarNotaR();
+}
+
+function actualizarNotaR() {
+  const k = parseInt(document.getElementById('sel-k').value), r = leerR(), nc = Math.pow(2, k);
+  const ej = Array.from({length: Math.min(r, 4)}, (_, j) => (20 + j)).join(', ') + (r > 4 ? ', …' : '');
+  document.querySelectorAll('.rep-input').forEach(el => { el.placeholder = 'Ej: ' + ej; });
+  document.getElementById('nota-r').textContent = `${nc} corridas × ${r} réplica${r === 1 ? '' : 's'} = ${nc * r} observaciones esperadas. ` + (r === 1 ? 'Sin réplicas no hay error puro: se usará el método de Lenth.' : 'Si alguna corrida tiene otra cantidad de valores, el análisis se ajusta automáticamente (suma de cuadrados tipo III).');
+}
+
+function aplicarPegado() {
+  const k = parseInt(document.getElementById('sel-k').value);
+  const lineas = document.getElementById('pegar-datos').value.split(/\r?\n/).map(l => l.trim()).filter(l => l.length);
+  const errBox = document.getElementById('error-box');
+  if (lineas.length !== Math.pow(2, k)) {
+    errBox.textContent = `⚠ Se esperaban ${Math.pow(2, k)} líneas (una por corrida) y se encontraron ${lineas.length}.`;
+    errBox.style.display = 'block'; return;
+  }
+  errBox.style.display = 'none';
+  lineas.forEach((l, i) => { const el = document.getElementById('corrida-' + i); if (el) el.value = l.split(/[\t;\s]+/).filter(x => x).join(', '); });
 }
 
 configurarDiseno();
@@ -215,14 +245,13 @@ configurarDiseno();
 function calcularFactorial() {
   const errBox = document.getElementById('error-box');
   const k = parseInt(document.getElementById('sel-k').value);
-  const rEsperado = parseInt(document.getElementById('sel-r').value);
   const corridas = generarDiseno(k);
 
   const datosPorCorrida = [];
   for (let i = 0; i < corridas.length; i++) {
     const valores = parsearReplicas(document.getElementById(`corrida-${i}`).value);
-    if (!valores || valores.length !== rEsperado) {
-      errBox.textContent = `⚠ La corrida "${corridas[i].etiqueta}" debe tener exactamente ${rEsperado} valores numéricos separados por coma.`;
+    if (!valores) {
+      errBox.textContent = `⚠ La corrida "${corridas[i].etiqueta}" necesita al menos un valor numérico (separa varios con coma; usa punto decimal).`;
       errBox.style.display = 'block';
       return;
     }
@@ -238,34 +267,70 @@ function calcularFactorial() {
 
 function renderResultadoFactorial(r) {
   const panel = document.getElementById('resultados-panel');
+  const L = r.metodo === 'lenth';
+  const f4 = v => (v === null || v === undefined || isNaN(v)) ? '—' : v.toFixed(4);
   const filasEfectos = r.efectos.map(e => `
     <tr class="${e.significativo ? 'sig' : 'no-sig'} ${e.indices.length === 1 ? 'principal' : ''}">
       <td>${e.nombre}</td>
       <td>${e.efecto.toFixed(4)}</td>
       <td>${e.ss.toFixed(4)}</td>
-      <td>${e.f.toFixed(3)}</td>
-      <td>${e.p.toFixed(4)}</td>
-      <td>${e.significativo ? '✓ Significativo' : '— No significativo'}</td>
+      <td>${L ? f4(e.t) : (isNaN(e.f) ? '—' : e.f.toFixed(3))}</td>
+      <td>${f4(e.p)}</td>
+      <td>${e.significativo ? (L && e.simultaneo ? '✓ Significativo (también simultáneo)' : '✓ Significativo') : '— No significativo'}</td>
     </tr>
   `).join('');
+  const cards = L
+    ? `<div class="resultado-card"><div class="lbl">PSE (Lenth)</div><div class="val">${r.lenth.pse.toFixed(4)}</div></div>
+       <div class="resultado-card"><div class="lbl">ME (95 %)</div><div class="val">${r.lenth.me.toFixed(4)}</div></div>
+       <div class="resultado-card"><div class="lbl">SME (95 %)</div><div class="val">${r.lenth.sme.toFixed(4)}</div></div>`
+    : `<div class="resultado-card"><div class="lbl">R²</div><div class="val">${r.r2.toFixed(4)}</div></div>
+       <div class="resultado-card"><div class="lbl">CM Error</div><div class="val">${r.mse.toFixed(4)}</div></div>
+       <div class="resultado-card"><div class="lbl">gl Error</div><div class="val">${r.dfE}</div></div>`;
+  const aviso = (L ? `<div class="aviso-fac">Diseño <strong>sin réplicas</strong> (gl de error = 0): no hay error puro, así que no se puede hacer la prueba F. Los efectos se evalúan con el <strong>método de Lenth</strong>: PSE = ${r.lenth.pse.toFixed(4)}, margen de error ME = ${r.lenth.me.toFixed(4)} (un efecto con |efecto| > ME se marca como significativo; SME controla el error global). Es una guía exploratoria: confírmala con réplicas o con el gráfico normal de efectos.</div>` : '')
+    + (!r.balanceado ? `<div class="aviso-fac">Diseño <strong>desbalanceado</strong> (${r.nMin} a ${r.nMax} observaciones por corrida, N = ${r.N}). Se ajustó por mínimos cuadrados con codificación ±1 y sumas de cuadrados tipo III; el error puro tiene ${r.dfE} gl.</div>` : '');
 
   panel.innerHTML = `
     <h3>Resultado</h3>
-    <div class="resultado-grid">
-      <div class="resultado-card"><div class="lbl">R²</div><div class="val">${r.r2.toFixed(4)}</div></div>
-      <div class="resultado-card"><div class="lbl">CM Error</div><div class="val">${r.mse.toFixed(4)}</div></div>
-      <div class="resultado-card"><div class="lbl">gl Error</div><div class="val">${r.dfE}</div></div>
-    </div>
-    <table class="tabla-ef">
-      <thead><tr><th>Efecto</th><th>Estimado</th><th>SC</th><th>F</th><th>p</th><th>Conclusión</th></tr></thead>
+    ${aviso}
+    <div class="resultado-grid">${cards}</div>
+    <div class="tabla-scroll"><table class="tabla-ef">
+      <thead><tr><th>Efecto</th><th>Estimado</th><th>SC</th><th>${L ? 't (PSE)' : 'F'}</th><th>p</th><th>Conclusión</th></tr></thead>
       <tbody>${filasEfectos}</tbody>
-    </table>
+    </table></div>
     <div class="chart-container"><canvas id="factorial-chart"></canvas></div>
+    <h3 style="margin-top:18px">Gráfico normal de efectos (Daniel)</h3>
+    <p class="nota-conf">Los efectos nulos caen sobre una recta que pasa por el origen; los que se alejan de ella son los efectos activos.</p>
+    <div class="chart-container"><canvas id="normal-chart"></canvas></div>
     <div class="conclusion-text">${generarResumenFactorial(armarPayloadFactorial({}, r, '', ''))}</div>
     <div id="hpc-host"></div>
   `;
   renderChartFactorial(r);
+  renderChartNormal(r);
   CodigoFactorial.montar(document.getElementById('hpc-host'), currentDatosFactorial, r);
+}
+
+let chartNormal = null;
+function renderChartNormal(r) {
+  if (chartNormal) { chartNormal.destroy(); chartNormal = null; }
+  const ctx = document.getElementById('normal-chart'); if (!ctx) return;
+  const pts = r.normal;
+  // recta de referencia: por el origen con pendiente = mediana de |efecto|/|z| de los 2/3 centrales
+  const centrales = pts.slice(Math.floor(pts.length / 6), Math.ceil(pts.length * 5 / 6)).filter(p => Math.abs(p.z) > 1e-9);
+  const sl = centrales.length ? centrales.map(p => p.efecto / p.z).sort((a, b) => a - b)[centrales.length >> 1] : 1;
+  const zs = pts.map(p => p.z), zmin = Math.min(...zs) - 0.2, zmax = Math.max(...zs) + 0.2;
+  chartNormal = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets: [
+      { label: 'Efectos', data: pts.map(p => ({ x: p.efecto, y: p.z, n: p.nombre })), backgroundColor: pts.map(p => p.significativo ? '#00ff9d' : '#8a9bb8'), pointRadius: 5 },
+      { label: 'Referencia', type: 'line', data: [{ x: sl * zmin, y: zmin }, { x: sl * zmax, y: zmax }], borderColor: '#4a5a78', borderDash: [5, 4], pointRadius: 0, borderWidth: 1.5 }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw.n ? `${c.raw.n}: efecto ${c.raw.x.toFixed(3)}` : '' } } },
+      scales: { x: { title: { display: true, text: 'Efecto estimado', color: '#8a9bb8' }, ticks: { color: '#4a5a78', font: { size: 9 } }, grid: { color: 'rgba(42,58,92,0.4)' } },
+                y: { title: { display: true, text: 'Cuantil normal', color: '#8a9bb8' }, ticks: { color: '#4a5a78', font: { size: 9 } }, grid: { color: 'rgba(42,58,92,0.4)' } } } },
+    plugins: [{ id: 'etq', afterDatasetsDraw(ch) { const c = ch.ctx, m = ch.getDatasetMeta(0); c.save(); c.fillStyle = '#e8edf8'; c.font = '10px sans-serif';
+      m.data.forEach((pt, i) => { if (pts[i].significativo) c.fillText(pts[i].nombre, pt.x + 7, pt.y + 3); }); c.restore(); } }]
+  });
 }
 
 function renderChartFactorial(r) {
@@ -328,7 +393,8 @@ function preguntarFactorial() {
 <h3>Errores frecuentes y buenas prácticas</h3>
 <ul><li><strong>Aleatorice el orden de las corridas.</strong> Así evita que factores no controlados (cansancio, temperatura, lote de materia prima) se confundan con los efectos.</li><li><strong>Réplicas.</strong> Sin repeticiones no se puede estimar el error experimental; con una sola corrida por tratamiento, las pruebas de significancia son limitadas.</li><li><strong>Elija niveles amplios pero realistas.</strong> Niveles muy cercanos ocultan los efectos; niveles extremos pueden salirse de la región de operación.</li><li><strong>Interprete las interacciones antes que los efectos principales.</strong> Si hay interacción importante, el efecto de un factor depende del nivel del otro.</li><li><strong>Confirme.</strong> Antes de adoptar las condiciones óptimas, haga una corrida de confirmación.</li></ul>
 <h3>Preguntas frecuentes</h3>
-<details><summary>¿Cuántas corridas necesito?</summary><p>2ᵏ por réplica. Con k = 3 son 8 corridas; con dos réplicas, 16.</p></details>
+<details><summary>¿Cuántas corridas necesito?</summary><p>2ᵏ por réplica. Con k = 3 son 8 corridas; con dos réplicas, 16. La herramienta acepta de 1 a 50 réplicas, de 2 a 6 factores y corridas con distinta cantidad de observaciones. Con una sola réplica se usa el método de Lenth, que es una guía exploratoria.</p></details>
+<details><summary>¿Qué hago si me faltan datos en alguna corrida o tengo pocas réplicas?</summary><p>Escribe solo las observaciones que tienes; mientras cada corrida tenga al menos una, el análisis se ajusta por mínimos cuadrados (sumas de cuadrados tipo III). Si todas tienen una única observación, no hay error puro y se analizan los efectos con el gráfico normal y el método de Lenth.</p></details>
 <details><summary>¿Qué pasa si hay interacción significativa?</summary><p>Interpreta los efectos principales con cautela: el efecto de un factor cambia según el nivel del otro.</p></details>
 <details><summary>¿Por qué aleatorizar?</summary><p>Para evitar que factores externos (tiempo, operario) se confundan con los efectos estudiados.</p></details>
 <details><summary>¿Y si necesito más de dos niveles?</summary><p>Se requieren diseños factoriales generales o de superficie de respuesta, que no cubre esta herramienta.</p></details>

@@ -22,7 +22,12 @@ function generarResumenFactorial(payload) {
   const principales = sig.filter(e => e.indices.length === 1);
   const interacciones = sig.filter(e => e.indices.length > 1);
 
-  partes.push(`El modelo explica el ${fmtF(r.r2*100,1)}% de la variabilidad total (R²=${fmtF(r.r2)}).`);
+  if (r.metodo === 'lenth') {
+    partes.push(`Como hay una sola observación por corrida no existe error puro; los efectos se evalúan con el método de Lenth (PSE=${fmtF(r.lenth.pse,3)}, margen de error ME=${fmtF(r.lenth.me,3)}): son activos los efectos con |efecto| > ME. Úsalo como guía exploratoria y, si puedes, confírmalo con réplicas.`);
+  } else {
+    partes.push(`El modelo explica el ${fmtF(r.r2*100,1)}% de la variabilidad total (R²=${fmtF(r.r2)}).`);
+  }
+  if (!r.balanceado) partes.push(`El diseño es desbalanceado (${r.nMin} a ${r.nMax} observaciones por corrida), por lo que se usó suma de cuadrados tipo III.`);
 
   if (principales.length > 0) {
     partes.push(`Los efectos principales significativos son: ${principales.map(e => `${e.nombre} (efecto=${fmtF(e.efecto,2)})`).join(', ')}.`);
@@ -68,7 +73,7 @@ function generarRespuestaFactorial(payload) {
   }
 
   if (/r[eé]plica|error puro|por qu[eé] necesito repetir/.test(q)) {
-    return intro + `Las réplicas (repetir cada corrida ${r.r} veces en este caso) son las que permiten calcular el "error puro": la variabilidad natural que existe aunque no cambies nada. Sin réplicas, no habría forma de distinguir si una diferencia se debe a un efecto real o solo a ruido aleatorio — el diseño no tendría grados de libertad para el error.`;
+    return intro + `Las réplicas (en este análisis: ${typeof textoReplicas==='function'?textoReplicas(r):r.r+' por corrida'}) son las que permiten calcular el "error puro": la variabilidad natural que existe aunque no cambies nada. Sin réplicas, no habría forma de distinguir si una diferencia se debe a un efecto real o solo a ruido aleatorio — el diseño no tendría grados de libertad para el error.`;
   }
 
   if (/qu[eé] significa|interpretar|explica|resumen/.test(q)) {
