@@ -10,10 +10,11 @@ const CodigoFactorial = (function () {
     return cols;
   }
   function datosY(datos) { const y = []; datos.forEach(reps => reps.forEach(v => y.push(v))); return y; }
+  function leyenda(r0, com) { const fs = r0.factores || []; return fs.some(f => f.nombre) ? ['', com + ' Factores: ' + fs.slice(0, r0.k).map(f => f.letra + ' = ' + (f.nombre || 'Factor ' + f.letra) + (f.bajo || f.alto ? ' (−: ' + f.bajo + ', +: ' + f.alto + ')' : '')).join('; ') + (r0.respuesta ? '. Respuesta y = ' + r0.respuesta : '')] : []; }
   function formula(k) { return LET.slice(0, k).join('*'); }
   function codigoR(r0, datos) {
     const cols = columnas(r0), k = r0.k;
-    return [...cab('r'), '', '# 1. Datos (niveles codificados −1 / +1; réplicas en filas consecutivas) ---',
+    return [...cab('r'), ...leyenda(r0, '#'), '', '# 1. Datos (niveles codificados −1 / +1; réplicas en filas consecutivas) ---',
       'datos <- data.frame(', ...cols.map((c, j) => '  ' + LET[j] + ' = ' + H.rVec(c) + ','), '  y = ' + H.rVec(datosY(datos)), ')', '',
       '# 2. Modelo con todos los efectos e interacciones --------------',
       'modelo <- lm(y ~ ' + formula(k) + ', data = datos)      # A*B*C = efectos principales + interacciones',
@@ -37,7 +38,7 @@ const CodigoFactorial = (function () {
   }
   function codigoPy(r0, datos) {
     const cols = columnas(r0), k = r0.k;
-    return [...cab('py'), 'import importlib.util, subprocess, sys', 'for _mod, _pip in (("statsmodels", "statsmodels"), ("matplotlib", "matplotlib")):', '    if importlib.util.find_spec(_mod) is None:', '        subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", _pip])', '',
+    return [...cab('py'), ...leyenda(r0, '#'), 'import importlib.util, subprocess, sys', 'for _mod, _pip in (("statsmodels", "statsmodels"), ("matplotlib", "matplotlib")):', '    if importlib.util.find_spec(_mod) is None:', '        subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", _pip])', '',
       'import numpy as np, pandas as pd', 'import statsmodels.api as sm', 'import statsmodels.formula.api as smf', 'import scipy.stats as st', 'import matplotlib.pyplot as plt', '',
       '# 1. Datos (niveles codificados −1 / +1; réplicas en filas consecutivas) ---',
       'df = pd.DataFrame({', ...cols.map((c, j) => '    "' + LET[j] + '": ' + H.pyVec(c) + ','), '    "y": ' + H.pyVec(datosY(datos)), '})', '',
@@ -60,7 +61,7 @@ const CodigoFactorial = (function () {
       'st.probplot(efectos.values, plot=ax[1]); ax[1].set_title("Gráfico normal de efectos"); plt.show()', ''].join('\n');
   }
   function spec(r, datos, ctx, resumen) {
-    const k = r.k, S = { titulo: 'Informe de diseño factorial 2^' + k, subtitulo: k + ' factores · ' + textoReplicas(r) + ' · N = ' + r.N + ' observaciones', contexto: (ctx || '').trim(), nombreBase: 'factorial_2k' + k };
+    const k = r.k, S = { titulo: 'Informe de diseño factorial 2^' + k, subtitulo: k + ' factores · ' + textoReplicas(r) + ' · N = ' + r.N + ' observaciones', contexto: ((r.factores && r.factores.some(x => x.nombre) ? 'Factores: ' + r.factores.slice(0, k).map(x => x.letra + ' = ' + (x.nombre || 'Factor ' + x.letra) + (x.bajo || x.alto ? ' (−: ' + x.bajo + ', +: ' + x.alto + ')' : '')).join('; ') + (r.respuesta ? '. Respuesta: ' + r.respuesta : '') + '. ' : '') + (ctx || '')).trim(), nombreBase: 'factorial_2k' + k };
     const ord = [...r.efectos].sort((a, b) => Math.abs(b.efecto) - Math.abs(a.efecto));
     let img = null; try { img = H.barrasPNG(ord.map(e => e.nombre), ord.map(e => e.efecto), null, ord.map(e => e.significativo ? '*' : ''), 'Efecto estimado'); } catch (e) { }
     const pgf = '\\begin{tikzpicture}\\begin{axis}[ybar,width=0.9\\textwidth,height=7cm,ymajorgrids,ylabel={Efecto estimado},symbolic x coords={' + ord.map(e => e.nombre).join(',') + '},xtick=data,enlarge x limits=0.1]\\addplot+[fill=blue!30,draw=blue!60!black] coordinates {' + ord.map(e => '(' + e.nombre + ',' + num(e.efecto) + ')').join(' ') + '};\\end{axis}\\end{tikzpicture}\\caption{Efectos estimados ordenados por magnitud.}';

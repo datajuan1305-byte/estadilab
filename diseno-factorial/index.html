@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
-.tabla-scroll{overflow-x:auto;max-width:100%}.aviso-fac{border:1px solid #2a3a5c;border-left:3px solid #00ff9d;background:rgba(0,255,157,.05);padding:10px 12px;border-radius:8px;margin:0 0 12px;font-size:.9rem}.nota-conf{font-size:.85rem;opacity:.8;margin:8px 0}details.pegar{margin:10px 0}details.pegar textarea{width:100%}#sel-r{width:100%;box-sizing:border-box}
+.tabla-scroll{overflow-x:auto;max-width:100%}.guia-pasos{margin:0 0 12px 20px;font-size:.9rem;line-height:1.5}.ej-btn{background:transparent;border:1px dashed var(--accent,#00d4ff);color:var(--accent,#00d4ff);padding:8px 12px;border-radius:8px;cursor:pointer;margin:0 0 14px;font-size:.88rem}.tabla-factores{width:100%;border-collapse:collapse;margin-top:12px}.tabla-factores th{font-size:.72rem;text-align:left;padding:4px 6px;opacity:.7}.tabla-factores td{padding:3px 4px}.tabla-factores input{width:100%;min-width:110px;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.4rem .5rem;color:var(--text)}.tabla-diseno th small{display:block;font-weight:400;opacity:.8;text-transform:none;letter-spacing:0}.efn{opacity:.75;font-size:.75rem}.tabla-diseno td.signo{white-space:nowrap}.aviso-fac{border:1px solid #2a3a5c;border-left:3px solid #00ff9d;background:rgba(0,255,157,.05);padding:10px 12px;border-radius:8px;margin:0 0 12px;font-size:.9rem}.nota-conf{font-size:.85rem;opacity:.8;margin:8px 0}details.pegar{margin:10px 0}details.pegar textarea{width:100%}#sel-r{width:100%;box-sizing:border-box}
   :root {
     --bg: #0a0e1a; --bg2: #0f1628; --bg3: #161e35;
     --panel: #1a2340; --border: #2a3a5c;
@@ -130,11 +130,17 @@
   <div class="prueba-header">
     <h2>Diseño factorial 2ᵏ con réplicas</h2>
     <span class="formula">Efecto = Contraste / (r·2^(k-1))</span>
-    <p>Evalúa el efecto de k factores (cada uno en 2 niveles: bajo/alto) sobre una respuesta, incluyendo todas sus interacciones. Puedes usar cualquier número de réplicas: con 2 o más se estima el error puro y se prueban los efectos con F; con una sola observación por corrida el análisis usa el gráfico normal de efectos y el método de Lenth. Las corridas pueden tener distinta cantidad de observaciones.</p>
+    <p>Evalúa el efecto de k factores (cada uno en 2 niveles: bajo/alto) sobre una respuesta que tú mides, incluyendo todas sus interacciones. Puedes usar cualquier número de réplicas: con 2 o más se estima el error puro y se prueban los efectos con F; con una sola observación por corrida el análisis usa el gráfico normal de efectos y el método de Lenth. Las corridas pueden tener distinta cantidad de observaciones.</p>
   </div>
 
   <div class="panel">
-    <h3>Configuración</h3>
+    <h3>Paso 1 · Define tu experimento</h3>
+    <ol class="guia-pasos">
+      <li><strong>Elige cuántos factores</strong> (variables que tú controlas) y cuántas réplicas hiciste de cada combinación.</li>
+      <li><strong>Nombra cada factor</strong> y escribe qué valor tuvo en su nivel <em>bajo (−)</em> y en su nivel <em>alto (+)</em>. Es opcional, pero deja los resultados legibles.</li>
+      <li><strong>Escribe la respuesta medida</strong> en cada combinación (paso 2). Si repetiste la combinación, separa los valores con coma.</li>
+    </ol>
+    <button type="button" class="ej-btn" onclick="cargarEjemploFactorial()">📘 Cargar un ejemplo (ataque con plasma, 2³ con 2 réplicas)</button>
     <div class="config-row">
       <div class="param-group">
         <label>Número de factores (k)</label>
@@ -150,10 +156,18 @@
         <label>Réplicas por corrida (1 a 50)</label>
         <input type="number" id="sel-r" min="1" max="50" value="2" oninput="actualizarNotaR()">
       </div>
+      <div class="param-group">
+        <label>Variable de respuesta (lo que mides)</label>
+        <input type="text" id="nom-resp" placeholder="Ej: Rendimiento (%)" oninput="refrescarEtiquetas()">
+      </div>
     </div>
+    <div class="tabla-scroll"><table class="tabla-factores"><thead><tr><th>Factor</th><th>Nombre</th><th>Nivel bajo (−)</th><th>Nivel alto (+)</th></tr></thead><tbody id="factores-cont"></tbody></table></div>
+
+    <h3 style="margin-top:20px">Paso 2 · Ingresa tus datos</h3>
     <p class="nota-conf" id="nota-r"></p>
+    <p class="nota-conf">Cada fila es una combinación de niveles. Las columnas muestran el valor que tiene cada factor en esa fila. En la última columna escribe lo que mediste, por ejemplo <code>550, 604</code> si tienes dos réplicas.</p>
     <details class="pegar"><summary>Pegar todos los datos de una vez</summary>
-      <p class="nota-conf">Una línea por corrida, en el orden estándar de la tabla ((1), a, b, ab, c…). Los valores de cada línea se separan con coma, espacio o tabulador; puedes pegar desde Excel. Las líneas pueden tener distinta cantidad de valores.</p>
+      <p class="nota-conf">Una línea por corrida, en el orden de la tabla. Los valores de cada línea se separan con coma, espacio o tabulador; puedes pegar desde Excel. Las líneas pueden tener distinta cantidad de valores.</p>
       <textarea id="pegar-datos" rows="5" placeholder="12.1, 12.4, 11.9&#10;15.0, 14.7&#10;…"></textarea>
       <button type="button" class="calc-btn" style="margin-top:8px" onclick="aplicarPegado()">Cargar en la tabla</button>
     </details>
@@ -203,6 +217,48 @@ let chartFactorial = null;
 
 function leerR() { const v = parseInt(document.getElementById('sel-r').value); return Math.min(50, Math.max(1, isNaN(v) ? 1 : v)); }
 
+function construirFactores(k) {
+  const prev = leerFactores(true);
+  const cont = document.getElementById('factores-cont');
+  let h = '';
+  for (let i = 0; i < k; i++) {
+    const v = prev[i] || {};
+    h += `<tr><td class="etiqueta">${LETRAS[i]}</td>
+      <td><input type="text" id="fn-${i}" value="${v.nombre || ''}" placeholder="Ej: ${['Temperatura','Presión','Tiempo','Concentración','pH','Velocidad'][i]}" oninput="refrescarEtiquetas()"></td>
+      <td><input type="text" id="fb-${i}" value="${v.bajo || ''}" placeholder="Ej: ${['150 °C','10 bar','5 min','2 %','6','100 rpm'][i]}" oninput="refrescarEtiquetas()"></td>
+      <td><input type="text" id="fa-${i}" value="${v.alto || ''}" placeholder="Ej: ${['200 °C','20 bar','10 min','4 %','8','200 rpm'][i]}" oninput="refrescarEtiquetas()"></td></tr>`;
+  }
+  cont.innerHTML = h;
+}
+
+/** Lee nombres y niveles de los factores. Si crudo=false, completa con "Factor X" cuando falta el nombre. */
+function leerFactores(crudo) {
+  const out = [];
+  for (let i = 0; i < 6; i++) {
+    const n = document.getElementById('fn-' + i); if (!n) break;
+    const nombre = n.value.trim(), bajo = document.getElementById('fb-' + i).value.trim(), alto = document.getElementById('fa-' + i).value.trim();
+    out.push({ letra: LETRAS[i], nombre: crudo ? nombre : nombre, bajo, alto });
+  }
+  return out;
+}
+
+function refrescarEtiquetas() {
+  const fs = leerFactores(true);
+  fs.forEach((f, i) => {
+    const th = document.getElementById('th-' + i);
+    if (th) th.innerHTML = `${f.letra}${f.nombre ? `<small>${f.nombre.replace(/</g, '&lt;')}</small>` : ''}`;
+  });
+  document.querySelectorAll('td.signo').forEach(td => {
+    const i = +td.dataset.f, alto = td.dataset.s === '1', f = fs[i] || {};
+    const val = alto ? f.alto : f.bajo;
+    td.textContent = val ? val : (alto ? '+' : '−');
+    td.title = (alto ? 'Nivel alto (+)' : 'Nivel bajo (−)');
+  });
+  const rh = document.getElementById('th-resp');
+  const rn = document.getElementById('nom-resp').value.trim();
+  if (rh) rh.textContent = rn ? `Observaciones de «${rn}» (separadas por coma)` : 'Observaciones de la respuesta (separadas por coma)';
+}
+
 function configurarDiseno() {
   const k = parseInt(document.getElementById('sel-k').value);
   const r = leerR();
@@ -210,15 +266,30 @@ function configurarDiseno() {
   const letras = LETRAS.slice(0, k);
   const prev = {};
   document.querySelectorAll('.rep-input').forEach(el => { prev[el.id] = el.value; });
-  const ej = Array.from({length: Math.min(r, 4)}, (_, j) => (20 + j)).join(', ') + (r > 4 ? ', …' : '');
+  construirFactores(k);
 
-  let html = `<div class="tabla-scroll"><table class="tabla-diseno"><thead><tr><th>Corrida</th>${letras.map(l => `<th>${l}</th>`).join('')}<th>Observaciones (separadas por coma)</th></tr></thead><tbody>`;
+  let html = `<div class="tabla-scroll"><table class="tabla-diseno"><thead><tr><th>Corrida</th>${letras.map((l, i) => `<th id="th-${i}">${l}</th>`).join('')}<th id="th-resp">Observaciones</th></tr></thead><tbody>`;
   corridas.forEach((c, i) => {
-    html += `<tr><td class="etiqueta">${c.etiqueta}</td>${c.signos.map(s => `<td class="signo">${s === 1 ? '+' : '−'}</td>`).join('')}<td><input class="rep-input" id="corrida-${i}" value="${prev['corrida-' + i] || ''}" placeholder="Ej: ${ej}"></td></tr>`;
+    html += `<tr><td class="etiqueta" title="Notación estándar de la combinación">${c.etiqueta}</td>${c.signos.map((s, j) => `<td class="signo" data-f="${j}" data-s="${s === 1 ? 1 : 0}">${s === 1 ? '+' : '−'}</td>`).join('')}<td><input class="rep-input" id="corrida-${i}" value="${prev['corrida-' + i] || ''}"></td></tr>`;
   });
   html += '</tbody></table></div>';
   document.getElementById('tabla-diseno-cont').innerHTML = html;
   actualizarNotaR();
+  refrescarEtiquetas();
+}
+
+function cargarEjemploFactorial() {
+  const ej = { k: 3, r: 2, resp: 'Velocidad de ataque (Å/min)',
+    f: [['Separación', '0,80 cm', '1,20 cm'], ['Flujo de gas', '125 SCCM', '200 SCCM'], ['Potencia RF', '275 W', '325 W']],
+    d: ['550, 604', '669, 650', '633, 601', '642, 635', '1037, 1052', '749, 868', '1075, 1063', '729, 860'] };
+  document.getElementById('sel-k').value = ej.k; document.getElementById('sel-r').value = ej.r;
+  document.querySelectorAll('.rep-input').forEach(el => { el.value = ''; });
+  configurarDiseno();
+  document.getElementById('nom-resp').value = ej.resp;
+  ej.f.forEach((f, i) => { document.getElementById('fn-' + i).value = f[0]; document.getElementById('fb-' + i).value = f[1]; document.getElementById('fa-' + i).value = f[2]; });
+  ej.d.forEach((v, i) => { document.getElementById('corrida-' + i).value = v; });
+  refrescarEtiquetas();
+  document.getElementById('error-box').style.display = 'none';
 }
 
 function actualizarNotaR() {
@@ -260,9 +331,23 @@ function calcularFactorial() {
   errBox.style.display = 'none';
 
   const r = analizarFactorial(k, datosPorCorrida);
+  r.factores = leerFactores(true); r.respuesta = document.getElementById('nom-resp').value.trim();
   currentResultadoFactorial = r; currentDatosFactorial = datosPorCorrida;
   renderResultadoFactorial(r);
   const rb = document.getElementById('respuesta-box'); if (rb) rb.classList.remove('visible');
+}
+
+function leyendaFactores(r) {
+  const fs = r.factores || [];
+  if (!fs.some(f => f.nombre || f.bajo || f.alto) && !r.respuesta) return '';
+  const li = fs.slice(0, r.k).map(f => `<li><strong>${f.letra}</strong> = ${(f.nombre || 'Factor ' + f.letra).replace(/</g, '&lt;')}${f.bajo || f.alto ? ` (− ${(f.bajo || '?').replace(/</g, '&lt;')} → + ${(f.alto || '?').replace(/</g, '&lt;')})` : ''}</li>`).join('');
+  return `<div class="aviso-fac"><strong>Tu experimento</strong>${r.respuesta ? ` · respuesta: ${r.respuesta.replace(/</g, '&lt;')}` : ''}<ul style="margin:6px 0 0 18px">${li}</ul><span class="nota-conf">Un efecto positivo significa que la respuesta aumenta, en promedio, al pasar del nivel bajo al alto.</span></div>`;
+}
+
+function nombreLargoEfecto(r, e) {
+  const fs = r.factores || [];
+  if (!e.indices.some(i => fs[i] && fs[i].nombre)) return '';
+  return e.indices.map(i => (fs[i] && fs[i].nombre) || LETRAS[i]).join(' × ').replace(/</g, '&lt;');
 }
 
 function renderResultadoFactorial(r) {
@@ -271,7 +356,7 @@ function renderResultadoFactorial(r) {
   const f4 = v => (v === null || v === undefined || isNaN(v)) ? '—' : v.toFixed(4);
   const filasEfectos = r.efectos.map(e => `
     <tr class="${e.significativo ? 'sig' : 'no-sig'} ${e.indices.length === 1 ? 'principal' : ''}">
-      <td>${e.nombre}</td>
+      <td>${e.nombre}${nombreLargoEfecto(r, e) ? `<br><small class="efn">${nombreLargoEfecto(r, e)}</small>` : ''}</td>
       <td>${e.efecto.toFixed(4)}</td>
       <td>${e.ss.toFixed(4)}</td>
       <td>${L ? f4(e.t) : (isNaN(e.f) ? '—' : e.f.toFixed(3))}</td>
@@ -291,6 +376,7 @@ function renderResultadoFactorial(r) {
 
   panel.innerHTML = `
     <h3>Resultado</h3>
+    ${leyendaFactores(r)}
     ${aviso}
     <div class="resultado-grid">${cards}</div>
     <div class="tabla-scroll"><table class="tabla-ef">

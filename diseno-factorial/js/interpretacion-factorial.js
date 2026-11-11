@@ -18,6 +18,7 @@ function generarResumenFactorial(payload) {
   const partes = [];
   if (contexto && contexto.trim().length > 0) partes.push(`Con base en tu contexto ("${contexto.trim()}"):`);
 
+  if (r.factores && r.factores.some(f => f.nombre)) partes.push('Factores: ' + r.factores.slice(0, r.k).map(f => `${f.letra} = ${f.nombre || 'Factor ' + f.letra}`).join('; ') + (r.respuesta ? `; respuesta: ${r.respuesta}` : '') + '.');
   const sig = r.efectos.filter(e => e.significativo);
   const principales = sig.filter(e => e.indices.length === 1);
   const interacciones = sig.filter(e => e.indices.length > 1);
