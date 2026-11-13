@@ -353,10 +353,14 @@ function montarCodigoMulti(cols, g) {
     `tabla <- sapply(datos[vars], function(x) { x <- na.omit(x); c(n=length(x), media=mean(x), mediana=median(x), de=sd(x), min=min(x), q1=quantile(x,.25), q3=quantile(x,.75), max=max(x)) })\nprint(round(tabla, 4))`);
   const P = `import pandas as pd\n# datos = pd.read_excel("archivo.xlsx")\nvars = [${vars.map(v => '"' + v + '"').join(', ')}]\n` +
     (g ? `print(datos.groupby("${g}")[vars].describe().T.round(4))` : `print(datos[vars].describe().round(4))`);
-  host.innerHTML = `<details class="hpc-det" style="margin-top:1rem"><summary style="cursor:pointer;color:var(--accent)">Código para obtener esta tabla en R y Python</summary>
-    <p style="font-size:.78rem;margin:.6rem 0 .3rem">R</p><pre style="white-space:pre-wrap;font-size:.74rem;background:var(--bg3);padding:.6rem;border-radius:8px;overflow:auto"></pre>
-    <p style="font-size:.78rem;margin:.6rem 0 .3rem">Python</p><pre style="white-space:pre-wrap;font-size:.74rem;background:var(--bg3);padding:.6rem;border-radius:8px;overflow:auto"></pre></details>`;
-  const pres = host.querySelectorAll('pre'); pres[0].textContent = R; pres[1].textContent = P;
+  const filasInf = [];
+  FILAS_MULTI.forEach(f => { if (f.length > 1) filasInf.push([f[0]].concat(cols.map(c => String(celdaMulti(c, f)).replace('.', ',')))); });
+  HPCodigo.montar(host, () => ({
+    titulo: 'Informe: estadística descriptiva de varias variables', subtitulo: g ? 'Dividido según ' + g : 'Resumen por variable', contexto: '', nombreBase: 'descriptiva_variables',
+    secciones: [
+      { h: '1. Datos', items: [{ p: 'Variables: ' + vars.join(', ') + (g ? '. Dividido según «' + g + '».' : '.') + ' Archivo: ' + (HPDatos.ds() ? HPDatos.ds().archivo : '') + '.' }] },
+      { h: '2. Resultados', items: [{ tabla: { cab: ['Estadístico'].concat(cols.map(c => c.nombre + (c.grupo ? ' [' + c.grupo + ']' : ''))), filas: filasInf, izq: 1 } }] }],
+    pie: 'Cálculos realizados con ' + location.hostname + '.', codigoR: R, codigoPy: P }));
 }
 iniciarMisDatos();
 
