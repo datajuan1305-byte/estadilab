@@ -154,8 +154,16 @@
   </main>
 </div>
 
+<script>
+function cargarColumnaAux(ev) {
+  HPDatos.abrir(ev, { titulo: 'Elegir la columna de datos', ayuda: 'Elija la hoja y la columna numérica; luego presione «Calcular n, x̄, s y s²».', roles: [{ id: 'x', label: 'Variable', tipo: 'num' }],
+    alAplicar: r => { document.getElementById('datos-auxiliares').value = r.roles.x[0].valores.join(', '); } });
+}
+</script>
 <script src="js/motor-intervalos.js"></script>
 <script src="js/interpretacion-intervalos.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="../js/hp-datos.js"></script>
 <script src="../js/hp-codigo.js"></script>
 <script src="js/codigo-intervalos.js"></script>
 <script>
@@ -251,6 +259,7 @@ function loadIC(id, btn) {
         <summary>¿Tienes los datos crudos en vez del resumen?</summary>
         <div class="helper-box">
           <p>Pega tus datos (separados por coma, espacio o línea nueva) y obtén n, x̄, s y s² para copiarlos en los campos de arriba.</p>
+          <label style="display:block;border:1px dashed var(--border);border-radius:8px;padding:.5rem .8rem;margin:.5rem 0;cursor:pointer;font-size:.8rem;color:var(--text2)">📂 <strong>Cargar una columna desde Excel o CSV</strong> <span style="opacity:.7">(elige hoja, columna y filas)</span><input type="file" accept=".csv,.txt,.xlsx,.xls" style="display:none" onchange="cargarColumnaAux(event)"></label>
           <textarea id="datos-auxiliares" rows="3" placeholder="Ej: 12, 15, 18, 14, 20"></textarea>
           <button class="calc-btn" style="margin-top:0.5rem;" onclick="calcularAuxiliarIC()">Calcular n, x̄, s y s²</button>
           <div class="resultado-mini" id="resultado-auxiliar"></div>

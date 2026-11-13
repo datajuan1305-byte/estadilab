@@ -170,6 +170,7 @@
 <script src="js/motor-regresion.js"></script>
 <script src="js/interpretacion-regresion.js"></script>
 <script src="../js/hp-codigo.js"></script>
+<script src="../js/hp-datos.js"></script>
 <script src="js/codigo-regresion.js"></script>
 <script>
 let currentModuloR = null;
@@ -229,7 +230,7 @@ function renderSimple() {
         <h3>Datos pareados (X, Y)</h3>
         <label class="archivo-drop" for="archivo-input">
           📂 <strong>Subir CSV o Excel</strong>
-          <span>Columna 1 = X, columna 2 = Y</span>
+          <span>Elige la hoja, las columnas X e Y y las filas</span>
         </label>
         <input type="file" id="archivo-input" accept=".csv,.txt,.xlsx,.xls" onchange="handleArchivoSimple(event)" style="display:none;">
         <div id="archivo-info" class="archivo-info"></div>
@@ -351,7 +352,7 @@ function renderMultiple() {
         <h3>Datos</h3>
         <label class="archivo-drop" for="archivo-input-m">
           📂 <strong>Subir CSV o Excel</strong>
-          <span>Columna 1 = Y, columnas siguientes = X1, X2, ...</span>
+          <span>Elige la hoja, la columna Y, las columnas X y las filas</span>
         </label>
         <input type="file" id="archivo-input-m" accept=".csv,.txt,.xlsx,.xls" onchange="handleArchivoMultiple(event)" style="display:none;">
         <div id="archivo-info" class="archivo-info"></div>
@@ -391,51 +392,21 @@ function agregarVariableX() { numVariablesX++; renderFilasX(); }
 function quitarVariableX(idx) { numVariablesX--; renderFilasX(); }
 
 function handleArchivoMultiple(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const nombre = file.name.toLowerCase();
-
-  const procesarFilas = (filas) => {
-    const filasValidas = filas.filter(f => f && f.length >= 2 && f.every(v => v !== '' && v !== null && !isNaN(parseFloat(v))));
-    if (filasValidas.length === 0) { mostrarErrorArchivoR('No se encontraron filas numéricas completas.'); return; }
-    const numCols = filasValidas[0].length;
-    const colY = filasValidas.map(f => parseFloat(f[0]));
-    numVariablesX = numCols - 1;
-    renderFilasX();
-    document.getElementById('datos-y-m').value = colY.join(', ');
-    for (let j = 0; j < numVariablesX; j++) {
-      const colXj = filasValidas.map(f => parseFloat(f[j + 1]));
-      document.getElementById(`datos-x${j}-m`).value = colXj.join(', ');
+  HPDatos.abrir(event, {
+    titulo: 'Elegir la respuesta (Y) y las predictoras (X)',
+    ayuda: 'Elija la columna de la respuesta y marque una o más columnas predictoras. Solo se usan las filas completas.',
+    roles: [{ id: 'y', label: 'Variable Y (respuesta)', tipo: 'num' }, { id: 'xs', label: 'Variables predictoras (X)', tipo: 'num', multi: true, min: 1, max: 10 }],
+    pareado: true,
+    alError: mostrarErrorArchivoR,
+    alAplicar: res => {
+      const xs = res.roles.xs;
+      numVariablesX = xs.length;
+      renderFilasX();
+      document.getElementById('datos-y-m').value = res.roles.y[0].valores.join(', ');
+      xs.forEach((c, j) => { document.getElementById(`datos-x${j}-m`).value = c.valores.join(', '); });
+      mostrarInfoArchivo(`✓ ${res.n} filas, respuesta «${res.roles.y[0].nombre}» y ${xs.length} predictora(s) (${xs.map(c => c.nombre).join(', ')}) desde "${res.archivo}".`);
     }
-    mostrarInfoArchivo(`✓ ${filasValidas.length} filas y ${numVariablesX} variable(s) predictora(s) cargadas desde "${file.name}".`);
-  };
-
-  if (nombre.endsWith('.csv') || nombre.endsWith('.txt')) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const lineas = e.target.result.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-      const filas = lineas.map(l => l.split(/[,;\t]+/).map(s => s.trim()));
-      procesarFilas(filas);
-    };
-    reader.readAsText(file);
-  } else if (nombre.endsWith('.xlsx') || nombre.endsWith('.xls')) {
-    if (typeof XLSX === 'undefined') { mostrarErrorArchivoR('No se pudo cargar el lector de Excel.'); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const filas = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        procesarFilas(filas);
-      } catch (err) {
-        mostrarErrorArchivoR('No se pudo leer el archivo Excel.');
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  } else {
-    mostrarErrorArchivoR('Formato no soportado. Sube un archivo .csv, .xlsx o .xls.');
-  }
+  });
 }
 
 function calcularMultiple() {
@@ -533,51 +504,14 @@ function mostrarInfoArchivo(msg) {
 }
 
 function leerArchivoXY(event, callback) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const nombre = file.name.toLowerCase();
-
-  if (nombre.endsWith('.csv') || nombre.endsWith('.txt')) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const lineas = e.target.result.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-      const colX = [], colY = [];
-      lineas.forEach(linea => {
-        const partes = linea.split(/[,;\t]+/).map(s => s.trim());
-        if (partes.length >= 2) {
-          const nx = parseFloat(partes[0].replace(',', '.'));
-          const ny = parseFloat(partes[1].replace(',', '.'));
-          if (!isNaN(nx) && !isNaN(ny)) { colX.push(nx); colY.push(ny); }
-        }
-      });
-      callback(colX, colY, file.name);
-    };
-    reader.readAsText(file);
-  } else if (nombre.endsWith('.xlsx') || nombre.endsWith('.xls')) {
-    if (typeof XLSX === 'undefined') { mostrarErrorArchivoR('No se pudo cargar el lector de Excel.'); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const filas = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        const colX = [], colY = [];
-        filas.forEach(fila => {
-          if (!fila || fila.length < 2) return;
-          const nx = typeof fila[0] === 'number' ? fila[0] : parseFloat(String(fila[0]).replace(',', '.'));
-          const ny = typeof fila[1] === 'number' ? fila[1] : parseFloat(String(fila[1]).replace(',', '.'));
-          if (!isNaN(nx) && !isNaN(ny) && isFinite(nx) && isFinite(ny)) { colX.push(nx); colY.push(ny); }
-        });
-        callback(colX, colY, file.name);
-      } catch (err) {
-        mostrarErrorArchivoR('No se pudo leer el archivo Excel.');
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  } else {
-    mostrarErrorArchivoR('Formato no soportado. Sube un archivo .csv, .xlsx o .xls.');
-  }
+  HPDatos.abrir(event, {
+    titulo: 'Elegir las variables X (predictora) e Y (respuesta)',
+    ayuda: 'Elija la hoja y las dos columnas numéricas. Solo se usan las filas con valores en ambas columnas.',
+    roles: [{ id: 'x', label: 'Variable X (predictora)', tipo: 'num' }, { id: 'y', label: 'Variable Y (respuesta)', tipo: 'num' }],
+    pareado: true,
+    alError: mostrarErrorArchivoR,
+    alAplicar: res => callback(res.roles.x[0].valores, res.roles.y[0].valores, res.archivo + ' · ' + res.roles.x[0].nombre + ' vs ' + res.roles.y[0].nombre)
+  });
 }
 
 // ═══ CONTEXTO / PREGUNTAS ═══

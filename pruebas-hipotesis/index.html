@@ -155,8 +155,21 @@
   </main>
 </div>
 
+<script>
+function cargarColumnaAux(ev) {
+  HPDatos.abrir(ev, { titulo: 'Elegir la columna de datos', ayuda: 'Elija la hoja y la columna numérica; luego presione «Calcular n, x̄ y s».', roles: [{ id: 'x', label: 'Variable', tipo: 'num' }],
+    alAplicar: r => { document.getElementById('datos-auxiliares').value = r.roles.x[0].valores.join(', '); } });
+}
+function cargarParesPH(ev) {
+  HPDatos.abrir(ev, { titulo: 'Elegir las dos muestras pareadas', ayuda: 'Elija la columna «antes» y la columna «después». Solo se usan las filas con ambos valores, para conservar el pareo.',
+    roles: [{ id: 'a', label: 'Muestra 1 (antes)', tipo: 'num' }, { id: 'b', label: 'Muestra 2 (después)', tipo: 'num' }], pareado: true,
+    alAplicar: r => { document.getElementById('param-muestra1').value = r.roles.a[0].valores.join(', '); document.getElementById('param-muestra2').value = r.roles.b[0].valores.join(', '); } });
+}
+</script>
 <script src="js/motor-pruebas.js"></script>
 <script src="js/interpretacion-pruebas.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="../js/hp-datos.js"></script>
 <script src="../js/hp-codigo.js"></script>
 <script src="js/codigo-pruebas.js"></script>
 <script>
@@ -277,6 +290,7 @@ function loadPrueba(id, btn) {
         <summary>¿Tienes los datos crudos en vez del resumen?</summary>
         <div class="helper-box">
           <p>Pega tus datos (separados por coma, espacio o línea nueva) y obtén n, x̄ y s para copiarlos en los campos de arriba.</p>
+          <label style="display:block;border:1px dashed var(--border);border-radius:8px;padding:.5rem .8rem;margin:.5rem 0;cursor:pointer;font-size:.8rem;color:var(--text2)">📂 <strong>Cargar una columna desde Excel o CSV</strong> <span style="opacity:.7">(elige hoja, columna y filas)</span><input type="file" accept=".csv,.txt,.xlsx,.xls" style="display:none" onchange="cargarColumnaAux(event)"></label>
           <textarea id="datos-auxiliares" rows="3" placeholder="Ej: 12, 15, 18, 14, 20"></textarea>
           <button class="calc-btn" style="margin-top:0.5rem;" onclick="calcularAuxiliar()">Calcular n, x̄ y s</button>
           <div class="resultado-mini" id="resultado-auxiliar"></div>
@@ -285,6 +299,7 @@ function loadPrueba(id, btn) {
     `;
   } else if (cfg.modo === 'pareada') {
     camposHTML = `
+<label style="display:block;border:1px dashed var(--border);border-radius:8px;padding:.5rem .8rem;margin:.5rem 0;cursor:pointer;font-size:.8rem;color:var(--text2)">📂 <strong>Cargar las dos muestras desde Excel o CSV</strong> <span style="opacity:.7">(elige hoja, columna y filas)</span><input type="file" accept=".csv,.txt,.xlsx,.xls" style="display:none" onchange="cargarParesPH(event)"></label>
       <div class="param-group">
         <label>Muestra 1 (antes) — separados por coma, espacio o línea nueva</label>
         <textarea id="param-muestra1" rows="4" placeholder="Ej: 10, 12, 9, 15, 11, 13"></textarea>

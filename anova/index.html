@@ -176,6 +176,8 @@
   <div class="layout">
     <div class="panel">
       <h3>Tratamientos</h3>
+      <label style="display:block;border:1px dashed var(--border);border-radius:8px;padding:.5rem .8rem;margin:.5rem 0;cursor:pointer;font-size:.8rem;color:var(--text2)">📂 <strong>Cargar los grupos desde Excel o CSV</strong> <span style="opacity:.7">(elige hoja, columna y filas)</span><input type="file" accept=".csv,.txt,.xlsx,.xls" style="display:none" onchange="cargarGruposArchivo(event)"></label>
+      <div id="archivo-info" style="font-size:.75rem;color:var(--accent);margin:0 0 .5rem"></div>
       <div id="grupos-cont"></div>
       <button class="btn-agregar" onclick="agregarGrupo()">+ Agregar otro tratamiento</button>
       <div class="opt">
@@ -221,6 +223,20 @@
   </div>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="../js/hp-datos.js"></script>
+<script>
+function cargarGruposArchivo(ev) {
+  HPDatos.abrir(ev, { titulo: 'Elegir los grupos o tratamientos', agrupar: true, maxGrupos: 12,
+    ayuda: 'Dos formas: (1) marque una columna numérica por cada tratamiento, o (2) elija una sola columna de valores y dividala en grupos con otra columna (por ejemplo «Calificación» según «Estado civil»).',
+    roles: [{ id: 'v', label: 'Valores numéricos', tipo: 'num', multi: true, min: 1, max: 12 }],
+    alAplicar: r => {
+      const g = r.roles.v; if (g.length < 2) { document.getElementById('archivo-info').textContent = '⚠ Se necesitan al menos 2 grupos.'; return; }
+      datosForm = g.map(c => ({ nombre: c.nombre, valores: c.valores.join(', '), orden: '' })); renderGrupos();
+      document.getElementById('archivo-info').textContent = '✓ ' + g.length + ' grupos cargados desde «' + r.archivo + '». Revise y presione Calcular.';
+    } });
+}
+</script>
 <script src="js/motor-anova-avanzado.js"></script>
 <script src="js/interpretacion-anova.js"></script>
 <script src="js/codigo-anova.js"></script>

@@ -63,7 +63,7 @@
       const add = w.querySelector('.grp-add'); if (add) add.onclick = () => { gs.push({ n: 'Grupo ' + (gs.length + 1), v: '' }); pintarForm(); };
     });
     T.campos.forEach(c => { const el = $('f_' + c.id); if (!el) return; const ev = c.type === 'sel' ? 'change' : 'input'; el.addEventListener(ev, () => { v[c.id] = el.value; if (c.type === 'sel' && T.campos.some(k => k.show)) pintarForm(); }); });
-    $('np-archivo-txt').textContent = T.archivoTxt || ({ norm: 'Se usa la primera columna numérica', var: 'Cada columna es un grupo (la primera fila puede ser el nombre)', sup: 'Cada columna es un grupo (la primera fila puede ser el nombre)', dos: 'Columna 1 = grupo A, columna 2 = grupo B', rel2: 'Columna 1 = condición 1, columna 2 = condición 2', kind: 'Cada columna es un grupo (la primera fila puede ser el nombre)', krel: 'Cada fila es un sujeto y cada columna una condición' })[T.tab] || 'Se usa la primera columna';
+    $('np-archivo-txt').textContent = 'Al cargar el archivo elige la hoja, las columnas y las filas que quieres usar';
     $('np-error').style.display = 'none';
   }
   function setValor(id, txt) { const key = st.sel[st.tab]; valores(key)[id] = txt; const el = $('f_' + id); if (el) el.value = txt; }
@@ -99,11 +99,21 @@
     pintarForm(); $('np-error').style.display = 'none'; const inf = $('np-archivo-info'); inf.textContent = '✓ Datos cargados desde «' + nombre + '». Revise las casillas y presione Calcular.'; inf.className = 'archivo-info visible';
   }
   function leerArchivo(e) {
-    const f = e.target.files[0]; if (!f) return; const n = f.name.toLowerCase(), rd = new FileReader();
-    if (/\.(csv|txt)$/.test(n)) { rd.onload = ev => aplicarArchivo(ev.target.result.split(/\r?\n/).filter(l => l.trim()).map(l => l.split(l.includes(';') ? ';' : l.includes('\t') ? '\t' : ',').map(s => s.trim())), f.name); rd.readAsText(f); }
-    else if (/\.xlsx?$/.test(n)) { if (typeof XLSX === 'undefined') return err('No se pudo cargar el lector de Excel. Revise su conexión a internet.'); rd.onload = ev => { try { const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' }); aplicarArchivo(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 }), f.name); } catch (x) { err('No se pudo leer el archivo Excel.'); } }; rd.readAsArrayBuffer(f); }
-    else err('Formato no soportado. Suba un archivo .csv, .txt, .xlsx o .xls.');
-    e.target.value = '';
+    const key = st.sel[st.tab], T = TESTS[key], tab = T.tab, ay = T.archivoTxt || '';
+    let roles, agrupar = false, pareado = false, titulo = 'Elegir los datos del archivo', ayuda;
+    if (T.cargar) { roles = [{ id: 'c', label: 'Columnas a usar', tipo: 'cat', multi: true, min: 1, max: 12 }]; pareado = true; titulo = 'Elegir las columnas de categorías'; ayuda = ay + '. Si carga una tabla de frecuencias, incluya también la columna con los nombres de las filas.'; }
+    else if (tab === 'dos') { roles = [{ id: 'c', label: 'Valores (dos columnas, una por grupo)', tipo: 'num', multi: true, min: 2, max: 2 }]; agrupar = true; ayuda = 'Marque dos columnas numéricas (una por grupo) o elija una sola columna de valores y divídala en dos grupos con otra columna (por ejemplo «Peso» según «Sexo»).'; }
+    else if (tab === 'rel2') { roles = [{ id: 'c', label: 'Condición 1 y condición 2 (misma unidad en cada fila)', tipo: 'num', multi: true, min: 2, max: 2 }]; pareado = true; ayuda = 'Marque las dos columnas pareadas. Solo se usan las filas con ambos valores.'; }
+    else if (tab === 'kind' || tab === 'var' || tab === 'sup') { roles = [{ id: 'c', label: 'Valores (una columna por grupo)', tipo: 'num', multi: true, min: 2, max: 8 }]; agrupar = true; ayuda = 'Marque una columna numérica por grupo o elija una sola columna de valores y divídala en grupos con otra columna (por ejemplo «Calificación» según «Estado civil»).'; }
+    else if (tab === 'krel') { roles = [{ id: 'c', label: 'Mediciones repetidas (una columna por condición)', tipo: 'num', multi: true, min: 2, max: 12 }]; pareado = true; ayuda = 'Cada fila es un sujeto y cada columna una condición. Solo se usan las filas completas.'; }
+    else { roles = [{ id: 'c', label: 'Variable a analizar', tipo: 'num' }]; ayuda = 'Elija la hoja, la columna numérica y, si lo necesita, un rango de filas o un filtro.'; }
+    HPDatos.abrir(e, {
+      titulo, ayuda, roles, agrupar, pareado, maxGrupos: 8, alError: err,
+      alAplicar: res => {
+        if ((tab === 'dos') && res.roles.c.length !== 2) return err('La prueba compara exactamente dos grupos; la selección tiene ' + res.roles.c.length + '.');
+        aplicarArchivo(res.filas, res.archivo);
+      }
+    });
   }
   function err(m) { const b = $('np-error'); b.textContent = '⚠ ' + m; b.style.display = 'block'; }
 

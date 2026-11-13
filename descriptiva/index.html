@@ -133,7 +133,7 @@
       <h3>Ingresa tus datos</h3>
       <label class="archivo-drop" for="archivo-input">
         📂 <strong>Subir archivo CSV o Excel (.xlsx)</strong>
-        <span>Toma automáticamente todos los valores numéricos del archivo</span>
+        <span>Elige la hoja, la columna y las filas que quieres analizar</span>
       </label>
       <input type="file" id="archivo-input" accept=".csv,.txt,.xlsx,.xls" onchange="handleArchivo(event)" style="display:none;">
       <div id="archivo-info" class="archivo-info"></div>
@@ -178,6 +178,7 @@
 <script src="js/motor-descriptiva.js"></script>
 <script src="js/interpretacion-descriptiva.js"></script>
 <script src="../js/hp-codigo.js"></script>
+<script src="../js/hp-datos.js"></script>
 <script src="js/codigo-descriptiva.js"></script>
 <script>
 let currentDatos = null;
@@ -216,45 +217,13 @@ function extraerNumerosDeTexto(texto) {
 }
 
 function handleArchivo(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const nombre = file.name.toLowerCase();
-
-  if (nombre.endsWith('.csv') || nombre.endsWith('.txt')) {
-    const reader = new FileReader();
-    reader.onload = (e) => completarDesdeArchivo(extraerNumerosDeTexto(e.target.result), file.name);
-    reader.onerror = () => mostrarErrorArchivo('No se pudo leer el archivo. Intenta de nuevo.');
-    reader.readAsText(file);
-  } else if (nombre.endsWith('.xlsx') || nombre.endsWith('.xls')) {
-    if (typeof XLSX === 'undefined') {
-      mostrarErrorArchivo('No se pudo cargar el lector de Excel (revisa tu conexión a internet) e intenta de nuevo.');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const filas = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        const numeros = [];
-        filas.forEach(fila => fila.forEach(celda => {
-          if (typeof celda === 'number' && isFinite(celda)) numeros.push(celda);
-          else if (typeof celda === 'string') {
-            const n = parseFloat(celda.replace(',', '.'));
-            if (!isNaN(n) && isFinite(n) && celda.trim() === n.toString()) numeros.push(n);
-          }
-        }));
-        completarDesdeArchivo(numeros, file.name);
-      } catch (err) {
-        mostrarErrorArchivo('No se pudo leer el archivo Excel. Verifica que no esté dañado ni protegido con contraseña.');
-      }
-    };
-    reader.onerror = () => mostrarErrorArchivo('No se pudo leer el archivo. Intenta de nuevo.');
-    reader.readAsArrayBuffer(file);
-  } else {
-    mostrarErrorArchivo('Formato no soportado. Sube un archivo .csv, .xlsx o .xls.');
-  }
+  HPDatos.abrir(event, {
+    titulo: 'Elegir los datos a analizar',
+    ayuda: 'Elija la hoja, la columna numérica que desea analizar y, si lo necesita, un rango de filas o un filtro.',
+    roles: [{ id: 'x', label: 'Variable a analizar', tipo: 'num' }],
+    alAplicar: res => completarDesdeArchivo(res.roles.x[0].valores, res.archivo + ' (' + res.roles.x[0].nombre + ')'),
+    alError: mostrarErrorArchivo
+  });
 }
 
 function fmt(v, dec = 4) {

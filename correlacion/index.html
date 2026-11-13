@@ -127,7 +127,7 @@
       <h3>Datos pareados (X, Y)</h3>
       <label class="archivo-drop" for="archivo-input">
         📂 <strong>Subir archivo CSV o Excel (.xlsx)</strong>
-        <span>Primera columna = X, segunda columna = Y</span>
+        <span>Elige la hoja, las columnas X e Y y las filas</span>
       </label>
       <input type="file" id="archivo-input" accept=".csv,.txt,.xlsx,.xls" onchange="handleArchivo(event)" style="display:none;">
       <div id="archivo-info" class="archivo-info"></div>
@@ -178,6 +178,7 @@
 <script src="js/motor-correlacion.js"></script>
 <script src="js/interpretacion-correlacion.js"></script>
 <script src="../js/hp-codigo.js"></script>
+<script src="../js/hp-datos.js"></script>
 <script src="js/codigo-correlacion.js"></script>
 <script>
 let currentX = null, currentY = null;
@@ -205,51 +206,14 @@ function completarDesdeArchivoXY(colX, colY, nombreArchivo) {
 }
 
 function handleArchivo(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const nombre = file.name.toLowerCase();
-
-  if (nombre.endsWith('.csv') || nombre.endsWith('.txt')) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const lineas = e.target.result.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-      const colX = [], colY = [];
-      lineas.forEach(linea => {
-        const partes = linea.split(/[,;\t]+/).map(s => s.trim());
-        if (partes.length >= 2) {
-          const nx = parseFloat(partes[0].replace(',', '.'));
-          const ny = parseFloat(partes[1].replace(',', '.'));
-          if (!isNaN(nx) && !isNaN(ny)) { colX.push(nx); colY.push(ny); }
-        }
-      });
-      completarDesdeArchivoXY(colX, colY, file.name);
-    };
-    reader.readAsText(file);
-  } else if (nombre.endsWith('.xlsx') || nombre.endsWith('.xls')) {
-    if (typeof XLSX === 'undefined') { mostrarErrorArchivo('No se pudo cargar el lector de Excel. Revisa tu conexión a internet.'); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const filas = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        const colX = [], colY = [];
-        filas.forEach(fila => {
-          if (!fila || fila.length < 2) return;
-          const nx = typeof fila[0] === 'number' ? fila[0] : parseFloat(String(fila[0]).replace(',', '.'));
-          const ny = typeof fila[1] === 'number' ? fila[1] : parseFloat(String(fila[1]).replace(',', '.'));
-          if (!isNaN(nx) && !isNaN(ny) && isFinite(nx) && isFinite(ny)) { colX.push(nx); colY.push(ny); }
-        });
-        completarDesdeArchivoXY(colX, colY, file.name);
-      } catch (err) {
-        mostrarErrorArchivo('No se pudo leer el archivo Excel. Verifica que no esté dañado ni protegido con contraseña.');
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  } else {
-    mostrarErrorArchivo('Formato no soportado. Sube un archivo .csv, .xlsx o .xls.');
-  }
+  HPDatos.abrir(event, {
+    titulo: 'Elegir las variables X e Y',
+    ayuda: 'Elija la hoja y las dos columnas numéricas. Solo se usan las filas con valores en ambas columnas.',
+    roles: [{ id: 'x', label: 'Variable X', tipo: 'num' }, { id: 'y', label: 'Variable Y', tipo: 'num' }],
+    pareado: true,
+    alAplicar: res => completarDesdeArchivoXY(res.roles.x[0].valores, res.roles.y[0].valores, res.archivo + ' (' + res.roles.x[0].nombre + ' y ' + res.roles.y[0].nombre + ')'),
+    alError: mostrarErrorArchivo
+  });
 }
 
 function calcularTodo() {
