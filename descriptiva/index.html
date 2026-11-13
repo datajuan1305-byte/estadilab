@@ -131,6 +131,14 @@
   <div class="layout">
     <div class="panel">
       <h3>Ingresa tus datos</h3>
+      <div id="hpd-panel"></div>
+      <div id="hpd-multi" style="display:none">
+        <div id="hpd-vars"></div>
+        <div id="hpd-grp"></div>
+        <button class="calc-btn" id="btn-multi" onclick="calcularMulti()" style="margin-bottom:.4rem">Calcular tabla con las variables elegidas</button>
+        <p class="input-hint">Elige de 1 a 10 variables numéricas: salen lado a lado en una sola tabla. Para una sola variable también verás el histograma y el código.</p>
+        <div class="query-separator">o trabaja con una sola columna</div>
+      </div>
       <label class="archivo-drop" for="archivo-input">
         📂 <strong>Subir archivo CSV o Excel (.xlsx)</strong>
         <span>Elige la hoja, la columna y las filas que quieres analizar</span>
@@ -259,6 +267,98 @@ function calcularTodo() {
   const rb = document.getElementById('respuesta-box');
   if (rb) rb.classList.remove('visible');
 }
+
+/* ───── Mis datos: varias variables en una tabla ───── */
+const FILAS_MULTI = [
+  ['Tendencia central'],
+  ['Recuento','recuento',0],['Promedio','promedio'],['Mediana','mediana'],['Moda',null,0,r=>r.moda.valores.length?r.moda.valores.slice(0,3).join('; '):'—'],
+  ['Dispersión'],
+  ['Varianza','varianza'],['Desviación estándar','desviacionEstandar'],['Coef. de variación (%)','coeficienteVariacion',2],['Error estándar','errorEstandar'],['Mínimo','minimo'],['Máximo','maximo'],['Rango','rango'],
+  ['Posición'],
+  ['Q1','cuartilInferior'],['Q3','cuartilSuperior'],['Rango intercuartílico','rangoIntercuartilico'],
+  ['Forma'],
+  ['Sesgo','sesgo'],['Sesgo estandarizado','sesgoEstandarizado'],['Curtosis','curtosis'],['Curtosis estandarizada','curtosisEstandarizada']
+];
+let multiVars, multiGrp, multiCols = null;
+function iniciarMisDatos() {
+  HPDatos.panel(document.getElementById('hpd-panel'), { alError: mostrarErrorArchivo });
+  multiVars = HPDatos.selector(document.getElementById('hpd-vars'), { clave: 'desc-vars', tipo: 'num', multi: true, max: 10, etiqueta: 'Variables numéricas a describir', alCambiar: () => {} });
+  multiGrp = HPDatos.selector(document.getElementById('hpd-grp'), { clave: 'desc-grp', tipo: 'cat', maxDist: 12, multi: false, etiqueta: 'Dividir según (opcional)', alCambiar: () => {} });
+  const mostrar = () => { document.getElementById('hpd-multi').style.display = HPDatos.hayDatos() ? 'block' : 'none'; };
+  HPDatos.onCambio(mostrar); mostrar();
+}
+function calcularMulti() {
+  const errBox = document.getElementById('error-box'); errBox.style.display = 'none';
+  const vars = multiVars.valor(), g = multiGrp.valor()[0] || '';
+  if (!vars.length) { errBox.textContent = '⚠ Elige al menos una variable numérica.'; errBox.style.display = 'block'; return; }
+  const cols = [], avisos = [];
+  const gv = g ? HPDatos.valores(g) : null;
+  let orden = [];
+  if (g) { gv.forEach(x => { if (x != null && orden.indexOf(x) < 0) orden.push(x); }); if (orden.every(x => !isNaN(Number(x)))) orden.sort((a,b)=>a-b); }
+  vars.forEach(nm => {
+    const v = HPDatos.valores(nm);
+    const grupos = g ? orden.map(o => ({ et: o, d: v.filter((x,i) => x != null && gv[i] === o) })) : [{ et: '', d: v.filter(x => x != null) }];
+    grupos.forEach(gr => {
+      if (gr.d.length < 2) { avisos.push(`«${nm}${gr.et ? ' · ' + gr.et : ''}» tiene menos de 2 datos y se omitió.`); return; }
+      cols.push({ nombre: nm, grupo: gr.et, d: gr.d, r: calcularDescriptiva(gr.d) });
+    });
+    const perdidos = v.length - v.filter(x => x != null).length;
+    if (perdidos) avisos.push(`«${nm}»: ${perdidos} celda(s) vacía(s) o no numéricas omitidas.`);
+  });
+  if (!cols.length) { errBox.textContent = '⚠ Ninguna variable tiene datos suficientes.'; errBox.style.display = 'block'; return; }
+  multiCols = cols; if (chart) { chart.destroy(); chart = null; }
+  renderMulti(cols, avisos, g);
+}
+function celdaMulti(c, f) {
+  if (f[3]) return f[3](c.r);
+  const v = c.r[f[1]]; if (f[1] === 'recuento') return v;
+  return fmt(v, f[2] != null ? f[2] : 4);
+}
+function renderMulti(cols, avisos, g) {
+  const panel = document.getElementById('resultados-panel');
+  const cab = cols.map(c => `<th>${c.nombre}${c.grupo ? '<br><small>' + g + ': ' + c.grupo + '</small>' : ''}</th>`).join('');
+  let filas = '';
+  FILAS_MULTI.forEach(f => {
+    if (f.length === 1) filas += `<tr class="section-row"><td colspan="${cols.length + 1}">${f[0]}</td></tr>`;
+    else filas += `<tr><td class="label">${f[0]}</td>${cols.map(c => `<td class="value">${celdaMulti(c, f)}</td>`).join('')}</tr>`;
+  });
+  panel.innerHTML = `<h3>Resumen estadístico por variable</h3>
+    <div class="resumen-n"><span class="chip">${cols.length} columna${cols.length>1?'s':''}</span>${g ? `<span class="chip">dividido según ${g}</span>` : ''}</div>
+    <div style="overflow-x:auto"><table class="stats-table">
+      <tr><td class="label"></td>${cab}</tr>${filas}</table></div>
+    ${avisos.length ? '<p style="font-size:.72rem;color:var(--text3);margin-top:.8rem">ℹ️ ' + avisos.join('<br>ℹ️ ') + '</p>' : ''}
+    <div style="margin-top:.8rem"><button class="calc-btn" style="width:auto;padding:.4rem 1rem;font-size:.8rem" onclick="copiarMulti()">Copiar tabla (CSV)</button></div>
+    <div class="chart-container" id="chart-wrap-multi" style="display:none"><canvas id="hist-chart"></canvas></div>
+    <div id="hpc-host"></div>
+    <div id="hpc-host-multi"></div>`;
+  if (cols.length === 1) {
+    document.getElementById('chart-wrap-multi').style.display = '';
+    currentDatos = cols[0].d; currentResultados = cols[0].r;
+    renderHistograma(cols[0].d);
+    CodigoDescriptiva.montar(document.getElementById('hpc-host'), cols[0].d, cols[0].r);
+  } else montarCodigoMulti(cols, g);
+}
+function copiarMulti() {
+  const cols = multiCols; if (!cols) return;
+  const lin = [['Estadístico'].concat(cols.map(c => c.nombre + (c.grupo ? ' [' + c.grupo + ']' : '')))];
+  FILAS_MULTI.forEach(f => { if (f.length > 1) lin.push([f[0]].concat(cols.map(c => String(celdaMulti(c, f)).replace('.', ',')))); });
+  const t = lin.map(l => l.join('\t')).join('\n');
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => alert('Tabla copiada. Pégala en Excel.')).catch(() => { prompt('Copia la tabla:', t); });
+}
+function montarCodigoMulti(cols, g) {
+  const host = document.getElementById('hpc-host-multi'), vars = multiVars.valor();
+  const q = s => "'" + s.replace(/'/g, "\\'") + "'";
+  const R = `# Estadísticos descriptivos de varias variables (datos en el data.frame «datos»)\nvars <- c(${vars.map(v => '"' + v + '"').join(', ')})\n` +
+    (g ? `tabla <- do.call(rbind, lapply(vars, function(v) do.call(rbind, lapply(split(datos[[v]], datos[["${g}"]]), function(x) { x <- na.omit(x); c(n=length(x), media=mean(x), mediana=median(x), de=sd(x), min=min(x), max=max(x)) }))))\nprint(round(tabla, 4))` :
+    `tabla <- sapply(datos[vars], function(x) { x <- na.omit(x); c(n=length(x), media=mean(x), mediana=median(x), de=sd(x), min=min(x), q1=quantile(x,.25), q3=quantile(x,.75), max=max(x)) })\nprint(round(tabla, 4))`);
+  const P = `import pandas as pd\n# datos = pd.read_excel("archivo.xlsx")\nvars = [${vars.map(v => '"' + v + '"').join(', ')}]\n` +
+    (g ? `print(datos.groupby("${g}")[vars].describe().T.round(4))` : `print(datos[vars].describe().round(4))`);
+  host.innerHTML = `<details class="hpc-det" style="margin-top:1rem"><summary style="cursor:pointer;color:var(--accent)">Código para obtener esta tabla en R y Python</summary>
+    <p style="font-size:.78rem;margin:.6rem 0 .3rem">R</p><pre style="white-space:pre-wrap;font-size:.74rem;background:var(--bg3);padding:.6rem;border-radius:8px;overflow:auto"></pre>
+    <p style="font-size:.78rem;margin:.6rem 0 .3rem">Python</p><pre style="white-space:pre-wrap;font-size:.74rem;background:var(--bg3);padding:.6rem;border-radius:8px;overflow:auto"></pre></details>`;
+  const pres = host.querySelectorAll('pre'); pres[0].textContent = R; pres[1].textContent = P;
+}
+iniciarMisDatos();
 
 function renderResultados(r, datos) {
   const panel = document.getElementById('resultados-panel');

@@ -259,6 +259,8 @@ function loadIC(id, btn) {
         <summary>¿Tienes los datos crudos en vez del resumen?</summary>
         <div class="helper-box">
           <p>Pega tus datos (separados por coma, espacio o línea nueva) y obtén n, x̄, s y s² para copiarlos en los campos de arriba.</p>
+          <div data-hpd-panel></div>
+<button type="button" class="hpd-btn s" data-hpd-usar style="display:none;margin:.2rem 0 .6rem" onclick="cargarColumnaAux(null)">📊 Elegir variables de «Mis datos»</button>
           <label style="display:block;border:1px dashed var(--border);border-radius:8px;padding:.5rem .8rem;margin:.5rem 0;cursor:pointer;font-size:.8rem;color:var(--text2)">📂 <strong>Cargar una columna desde Excel o CSV</strong> <span style="opacity:.7">(elige hoja, columna y filas)</span><input type="file" accept=".csv,.txt,.xlsx,.xls" style="display:none" onchange="cargarColumnaAux(event)"></label>
           <textarea id="datos-auxiliares" rows="3" placeholder="Ej: 12, 15, 18, 14, 20"></textarea>
           <button class="calc-btn" style="margin-top:0.5rem;" onclick="calcularAuxiliarIC()">Calcular n, x̄, s y s²</button>

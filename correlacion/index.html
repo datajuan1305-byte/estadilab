@@ -125,6 +125,17 @@
   <div class="layout">
     <div class="panel">
       <h3>Datos pareados (X, Y)</h3>
+      <div id="hpd-panel"></div>
+      <div id="hpd-multi" style="display:none">
+        <div id="hpd-vars"></div>
+        <div class="param-group" style="display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:center;font-size:.8rem">
+          <label>Coeficiente <select id="mx-metodo"><option value="pearson">Pearson</option><option value="spearman">Spearman</option></select></label>
+          <label><input type="checkbox" id="mx-completas"> Usar solo filas completas en todas las variables</label>
+        </div>
+        <button class="calc-btn" onclick="calcularMatrizUI()" style="margin-bottom:.4rem">Calcular matriz de correlaciones</button>
+        <p class="input-hint">Elige de 2 a 10 variables: obtienes todos los pares con p ajustado por Holm. Para analizar un par a fondo, haz clic en su celda.</p>
+        <div class="query-separator">o analiza un solo par X, Y</div>
+      </div>
       <label class="archivo-drop" for="archivo-input">
         📂 <strong>Subir archivo CSV o Excel (.xlsx)</strong>
         <span>Elige la hoja, las columnas X e Y y las filas</span>
@@ -180,6 +191,8 @@
 <script src="../js/hp-codigo.js"></script>
 <script src="../js/hp-datos.js"></script>
 <script src="js/codigo-correlacion.js"></script>
+<script src="js/matriz-correlacion.js"></script>
+<script>window.addEventListener('DOMContentLoaded', iniciarMatriz);</script>
 <script>
 let currentX = null, currentY = null;
 let currentResultados = null;

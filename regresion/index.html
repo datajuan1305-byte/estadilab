@@ -228,6 +228,8 @@ function renderSimple() {
     <div class="calc-grid">
       <div class="panel">
         <h3>Datos pareados (X, Y)</h3>
+        <div data-hpd-panel></div>
+        <button type="button" class="hpd-btn s" data-hpd-usar style="display:none;margin:.2rem 0 .6rem" onclick="handleArchivoSimple(null)">📊 Elegir variables de «Mis datos»</button>
         <label class="archivo-drop" for="archivo-input">
           📂 <strong>Subir CSV o Excel</strong>
           <span>Elige la hoja, las columnas X e Y y las filas</span>
@@ -350,6 +352,8 @@ function renderMultiple() {
     <div class="calc-grid">
       <div class="panel">
         <h3>Datos</h3>
+        <div data-hpd-panel></div>
+        <button type="button" class="hpd-btn s" data-hpd-usar style="display:none;margin:.2rem 0 .6rem" onclick="handleArchivoMultiple(null)">📊 Elegir variables de «Mis datos»</button>
         <label class="archivo-drop" for="archivo-input-m">
           📂 <strong>Subir CSV o Excel</strong>
           <span>Elige la hoja, la columna Y, las columnas X y las filas</span>

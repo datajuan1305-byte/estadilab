@@ -176,6 +176,8 @@
   <div class="layout">
     <div class="panel">
       <h3>Tratamientos</h3>
+<div data-hpd-panel></div>
+      <button type="button" class="hpd-btn s" data-hpd-usar style="display:none;margin:.2rem 0 .6rem" onclick="cargarGruposArchivo(null)">📊 Elegir variables de «Mis datos»</button>
       <label style="display:block;border:1px dashed var(--border);border-radius:8px;padding:.5rem .8rem;margin:.5rem 0;cursor:pointer;font-size:.8rem;color:var(--text2)">📂 <strong>Cargar los grupos desde Excel o CSV</strong> <span style="opacity:.7">(elige hoja, columna y filas)</span><input type="file" accept=".csv,.txt,.xlsx,.xls" style="display:none" onchange="cargarGruposArchivo(event)"></label>
       <div id="archivo-info" style="font-size:.75rem;color:var(--accent);margin:0 0 .5rem"></div>
       <div id="grupos-cont"></div>

@@ -37,7 +37,7 @@
   function valores(key) { return st.vals[key] || (st.vals[key] = {}); }
   function pintarForm() {
     const key = st.sel[st.tab], T = TESTS[key], v = valores(key);
-    T.campos.forEach(c => { if (!(c.id in v)) v[c.id] = c.def !== undefined ? JSON.parse(JSON.stringify(c.def)) : ''; });
+    T.campos.forEach(c => { if (!(c.id in v)) v[c.id] = c.def !== undefined ? JSON.parse(JSON.stringify(c.def)) : (c.type === 'vars' ? [] : ''); });
     let h = '';
     T.campos.forEach(c => {
       if (c.show && !c.show(v)) return;
@@ -45,6 +45,16 @@
       if (c.type === 'grupos') {
         const gs = v[c.id]; h += '<div class="param-group"><label>' + esc(c.label) + '</label><div id="grp-wrap">' + gs.map((g, i) => `<div class="grp-item"><div class="grp-top"><input type="text" class="grp-n" data-i="${i}" value="${esc(g.n)}" maxlength="30" aria-label="Nombre del grupo ${i + 1}">${gs.length > c.min ? `<button type="button" class="grp-del" data-i="${i}" aria-label="Quitar grupo">✕</button>` : ''}</div><textarea class="grp-v" data-i="${i}" rows="2" placeholder="Valores del grupo, separados por espacios o comas" spellcheck="false">${esc(g.v)}</textarea></div>`).join('') + '</div>' + (gs.length < c.max ? '<button type="button" class="np-sec grp-add">+ Agregar grupo</button>' : '') + '<div class="hint">Cada grupo en su casilla. Puede cambiar los nombres.</div></div>';
         return;
+      }
+      if (c.type === 'vars' || c.type === 'varsel') {
+        const d = HPDatos.ds(), sel0 = v[c.id], max = c.max || 10;
+        const el0 = d ? d.cols.filter(x => (c.tipo === 'num' ? x.tipo === 'num' : x.tipo !== 'num') && !(c.maxDist && x.tipo !== 'num' && x.nDist > c.maxDist)) : [];
+        h += '<div class="param-group"><label>' + esc(c.label) + (c.type === 'vars' ? ' <span style="opacity:.7;font-weight:400">(' + (c.min ? 'de ' + c.min + ' a ' : 'hasta ') + max + ')</span>' : '') + '</label>';
+        if (!d) h += '<div class="hint" style="color:#ffcc66">Primero cargue sus datos en «Mis datos» (arriba).</div>';
+        else if (!el0.length) h += '<div class="hint" style="color:#ffcc66">«Mis datos» no tiene variables ' + (c.tipo === 'num' ? 'numéricas' : 'categóricas') + '. Puede cambiar el tipo en «Variables y etiquetas».</div>';
+        else if (c.type === 'vars') h += '<div class="vchips">' + el0.map(x => `<label><input type="checkbox" class="vch" data-c="${esc(c.id)}" value="${esc(x.nombre)}"${(sel0 || []).includes(x.nombre) ? ' checked' : ''}> ${esc(x.nombre)}${c.tipo !== 'num' ? ' <small>(' + x.nDist + ')</small>' : ''}</label>`).join('') + '</div>';
+        else h += '<select class="vsel" data-c="' + esc(c.id) + '"><option value="">' + esc(c.vacio || '— ninguna —') + '</option>' + el0.map(x => `<option value="${esc(x.nombre)}"${sel0 === x.nombre ? ' selected' : ''}>${esc(x.nombre)}</option>`).join('') + '</select>';
+        h += (c.hint ? '<div class="hint">' + esc(c.hint) + '</div>' : '') + '</div>'; return;
       }
       const val = esc(v[c.id]);
       let ctl;
@@ -62,6 +72,9 @@
       w.querySelectorAll('.grp-del').forEach(e => e.onclick = () => { gs.splice(+e.dataset.i, 1); pintarForm(); });
       const add = w.querySelector('.grp-add'); if (add) add.onclick = () => { gs.push({ n: 'Grupo ' + (gs.length + 1), v: '' }); pintarForm(); };
     });
+    $('np-campos').querySelectorAll('.vch').forEach(e => e.addEventListener('change', () => { const c = T.campos.find(k => k.id === e.dataset.c), a = v[c.id] = (v[c.id] || []).slice(); const i = a.indexOf(e.value); if (e.checked && i < 0) { if (a.length >= (c.max || 10)) { e.checked = false; return err('Máximo ' + (c.max || 10) + ' variables a la vez.'); } a.push(e.value); } if (!e.checked && i >= 0) a.splice(i, 1); const d = HPDatos.ds(); v[c.id] = d.cols.map(x => x.nombre).filter(n => a.includes(n)); $('np-error').style.display = 'none'; }));
+    $('np-campos').querySelectorAll('.vsel').forEach(e => e.addEventListener('change', () => { v[e.dataset.c] = e.value; }));
+    const tv = T.campos.some(c => c.type === 'vars' || c.type === 'varsel'); if ($('np-usar')) $('np-usar').style.display = (!tv && HPDatos.hayDatos()) ? '' : 'none'; if ($('np-archivo-bloque')) $('np-archivo-bloque').style.display = tv ? 'none' : '';
     T.campos.forEach(c => { const el = $('f_' + c.id); if (!el) return; const ev = c.type === 'sel' ? 'change' : 'input'; el.addEventListener(ev, () => { v[c.id] = el.value; if (c.type === 'sel' && T.campos.some(k => k.show)) pintarForm(); }); });
     $('np-archivo-txt').textContent = 'Al cargar el archivo elige la hoja, las columnas y las filas que quieres usar';
     $('np-error').style.display = 'none';
@@ -70,6 +83,7 @@
 
   function cargarEjemplo() {
     const key = st.sel[st.tab], T = TESTS[key], v = valores(key);
+    if (T.demo) { if (!HPDatos.hayDatos() || !HPDatos.ds().cols.some(c => T.demoOk(c))) HPDatos.cargarFilas(T.demo(), 'Ejemplo_encuesta (datos de demostración)'); }
     Object.keys(T.ejemplo).forEach(k => v[k] = T.ejemplo[k]); pintarForm(); calcular();
   }
 
@@ -143,16 +157,25 @@
       ${o.sinHip ? '' : `<div class="hipo"><div><b>H₀:</b> ${esc(o.h0)}</div><div><b>H₁:</b> ${esc(o.h1)}</div><div class="al">Nivel de significancia α = ${P.fx(st.alpha, 2)}</div></div>`}
       <div class="coef-grid">${cards}</div>${tabla}${tabla2}${tabla3}
       ${(o.avisos || []).map(a => '<div class="np-aviso">⚠ ' + esc(a) + '</div>').join('')}
+      ${o.detalle ? '<div id="np-detalle"></div>' : ''}
       ${g}
       ${o.grafico2 ? '<div class="chart-container"><canvas id="np-chart2"></canvas></div>' : ''}
       <div class="interp"><h4>Interpretación</h4><p>${o.interp}</p></div>
       <details class="det"><summary>Ver todas las medidas</summary><div class="tw"><table class="np-t"><tbody>${o.resumen.map(f => `<tr><td>${esc(f[0])}</td><td class="r">${esc(f[1])}</td></tr>`).join('')}</tbody></table></div></details>
       <div id="np-codigo"></div>`;
+    if (o.detalle) detalle(o.detalle);
     dibujar(o.grafico); if (o.grafico2) dibujar(o.grafico2, true);
     const ctx = $('np-contexto') ? $('np-contexto').value : '';
     H.montar($('np-codigo'), () => especificacion(T, o));
   }
 
+  function tablaHtml(t) { return `<h4 class="t2">${esc(t.titulo || '')}</h4><div class="tw"><table class="np-t"><thead><tr>${t.cab.map((c, i) => `<th${i ? ' class="r"' : ''}>${esc(c)}</th>`).join('')}</tr></thead><tbody>${t.filas.map(f => '<tr>' + f.map((c, i) => `<td${i ? ' class="r"' : ''}>${esc(c)}</td>`).join('') + '</tr>').join('')}</tbody></table></div>`; }
+  function detalle(D) {
+    const w = $('np-detalle'); if (!w) return;
+    w.innerHTML = `<div class="param-group" style="margin-top:1rem"><label>${esc(D.titulo)}</label><select id="np-det-sel">${D.items.map((it, i) => `<option value="${i}"${i === D.def ? ' selected' : ''}>${esc(it.nombre)}</option>`).join('')}</select></div><div id="np-det-cont"></div>`;
+    const pintar = () => { $('np-det-cont').innerHTML = D.items[+$('np-det-sel').value].bloques.map(tablaHtml).join(''); };
+    $('np-det-sel').onchange = pintar; pintar();
+  }
   function plano(html) { const t = document.createElement('div'); t.innerHTML = html; return t.textContent; }
   function especificacion(T, o) {
     const u = st.ultimo, ctx = $('np-contexto') ? $('np-contexto').value.trim() : '';
@@ -162,6 +185,7 @@
         { h: '1. Planteamiento', items: [{ p: T.cuando }].concat(o.sinHip ? [] : [{ box: 'H₀: ' + o.h0 + '\nH₁: ' + o.h1 }]) },
         { h: '2. Datos', items: [{ p: o.datosTxt }] },
         { h: '3. Resultados', items: [{ tabla: { cab: ['Medida', 'Valor'], filas: o.resumen, izq: 1 } }].concat(o.tabla ? [{ tabla: { cab: o.tabla.cab, filas: o.tabla.filas, izq: 1 } }] : []).concat(o.tabla2 ? [{ p: o.tabla2.titulo }, { tabla: { cab: o.tabla2.cab, filas: o.tabla2.filas, izq: 1 } }] : []).concat(o.tabla3 ? [{ p: o.tabla3.titulo }, { tabla: { cab: o.tabla3.cab, filas: o.tabla3.filas, izq: 1 } }] : []) },
+        { h: '3b. Detalle', items: (o.detalle ? o.detalle.items.slice(0, 12).reduce((a, it) => a.concat([{ p: it.nombre }], it.bloques.map(b => ({ tabla: { cab: b.cab, filas: b.filas, izq: 1 } }))), []) : []) },
         { h: '4. Interpretación', items: [{ box: plano(o.interp) }].concat((o.avisos || []).map(a => ({ nota: a }))) },
         { h: '5. Supuestos', items: [{ lista: T.supuestos }] }],
       pie: T.refs || P.refs || 'Referencias: Siegel, S. y Castellan, N. J. (1988). Nonparametric Statistics for the Behavioral Sciences. McGraw-Hill; Conover, W. J. (1999). Practical Nonparametric Statistics. Wiley; Hollander, M., Wolfe, D. A. y Chicken, E. (2014). Nonparametric Statistical Methods. Wiley; Marsaglia, G., Tsang, W. W. y Wang, J. (2003). Evaluating Kolmogorov\'s distribution. Journal of Statistical Software, 8(18). Cálculos realizados con Estadilab (estadilab.com).',
@@ -233,6 +257,8 @@
     $('np-alpha').onchange = () => { st.alpha = Number($('np-alpha').value); if (st.ultimo) calcular(); };
     $('np-limpiar').onclick = () => { const key = st.sel[st.tab]; st.vals[key] = {}; pintarForm(); limpiarResultado(); $('np-archivo-info').className = 'archivo-info'; };
     window.addEventListener('hashchange', () => { leerHash(); pintarTodo(); });
+    if (window.HPDatos) HPDatos.onCambio(() => { const T = TESTS[st.sel[st.tab]]; if (T && T.campos.some(c => c.type === 'vars' || c.type === 'varsel')) { pintarForm(); limpiarResultado(); } else if ($('np-usar')) $('np-usar').style.display = HPDatos.hayDatos() && !(T && T.campos.some(c => c.type === 'vars')) ? '' : 'none'; });
+    if ($('np-usar')) $('np-usar').onclick = () => leerArchivo(null);
     pintarTodo();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
