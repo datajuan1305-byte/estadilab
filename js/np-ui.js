@@ -56,6 +56,7 @@
         else h += '<select class="vsel" data-c="' + esc(c.id) + '"><option value="">' + esc(c.vacio || '— ninguna —') + '</option>' + el0.map(x => `<option value="${esc(x.nombre)}"${sel0 === x.nombre ? ' selected' : ''}>${esc(x.nombre)}</option>`).join('') + '</select>';
         h += (c.hint ? '<div class="hint">' + esc(c.hint) + '</div>' : '') + '</div>'; return;
       }
+      if (c.type === 'tabla') { h += '<div class="param-group"><label>' + esc(c.label) + '</label><div class="hpt-host" data-c="' + esc(c.id) + '"></div></div>'; return; }
       const val = esc(v[c.id]);
       let ctl;
       if (c.type === 'ta') ctl = `<textarea id="${id}" rows="${c.rows || 3}" placeholder="${esc(c.ph || '')}" spellcheck="false">${val}</textarea>`;
@@ -72,6 +73,7 @@
       w.querySelectorAll('.grp-del').forEach(e => e.onclick = () => { gs.splice(+e.dataset.i, 1); pintarForm(); });
       const add = w.querySelector('.grp-add'); if (add) add.onclick = () => { gs.push({ n: 'Grupo ' + (gs.length + 1), v: '' }); pintarForm(); };
     });
+    $('np-campos').querySelectorAll('.hpt-host').forEach(e => { const c = T.campos.find(k => k.id === e.dataset.c); const api = HPTabla.montar(e, { valor: v[c.id], cuadrada: !!c.cuadrada, max: c.max, nombres: c.nombres, alCambiar: s => { v[c.id] = s; $('np-error').style.display = 'none'; } }); v[c.id] = api.get(); });
     $('np-campos').querySelectorAll('.vch').forEach(e => e.addEventListener('change', () => { const c = T.campos.find(k => k.id === e.dataset.c), a = v[c.id] = (v[c.id] || []).slice(); const i = a.indexOf(e.value); if (e.checked && i < 0) { if (a.length >= (c.max || 10)) { e.checked = false; return err('Máximo ' + (c.max || 10) + ' variables a la vez.'); } a.push(e.value); } if (!e.checked && i >= 0) a.splice(i, 1); const d = HPDatos.ds(); v[c.id] = d.cols.map(x => x.nombre).filter(n => a.includes(n)); $('np-error').style.display = 'none'; }));
     $('np-campos').querySelectorAll('.vsel').forEach(e => e.addEventListener('change', () => { v[e.dataset.c] = e.value; }));
     const tv = T.campos.some(c => c.type === 'vars' || c.type === 'varsel'); if ($('np-usar')) $('np-usar').style.display = (!tv && HPDatos.hayDatos()) ? '' : 'none'; if ($('np-archivo-bloque')) $('np-archivo-bloque').style.display = tv ? 'none' : '';
